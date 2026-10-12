@@ -1,0 +1,26 @@
+name = "lua"
+version = "5.4.8"
+
+import = [
+    "lua.blue"
+]
+
+[platform.linux]
+link = [
+    "linux/liblua.a",
+    "-lm",
+    "-ldl",
+    "-lpthread",
+]
+[platform.macos]
+link = [
+    "macos/liblua.a",
+    "-lm",
+    "-lpthread",
+]
+[platform.windows]
+link = [
+    "windows/liblua.lib",
+    "-lm"
+    "-lpthread"
+]

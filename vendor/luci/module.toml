@@ -1,0 +1,29 @@
+name = "luci"
+version = "0.1.0"
+
+import = [
+    "luci.blue"
+]
+
+[platform.linux]
+link = [
+    "linux/libluci.a",
+    "-lX11",
+    "-lXrandr",
+    "-lm",
+    "-ldl",
+    "-lpthread",
+]
+[platform.macos]
+link = [
+    "macos/libluci.a",
+    "-framework Cocoa",
+    "-framework CoreVideo",
+    "-framework IOKit",
+]
+[platform.windows]
+link = [
+    "windows/luci.lib",
+    "-lgdi32",
+    "-pthread"
+]

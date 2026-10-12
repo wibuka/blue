@@ -1,0 +1,189 @@
+// zlib API bindings for Blue.
+// Provides type definitions, constants, and function declarations for zlib 1.3.
+
+using alloc_func = (*u0, u32, u32) -> *u0
+using free_func = (*u0, *u0) -> u0
+
+struct z_stream {
+    next_in: *u8
+    avail_in: u32
+    total_in: usize
+    next_out: *u8
+    avail_out: u32
+    total_out: usize
+    msg: *u8
+    state: *u0
+    zalloc: alloc_func
+    zfree: free_func
+    opaque: *u0
+    data_type: i32
+    adler: usize
+    reserved: usize
+}
+
+using z_streamp *z_stream
+
+struct gz_header {
+    text: i32
+    time: usize
+    xflags: i32
+    os: i32
+    extra: *u8
+    extra_len: u32
+    extra_max: u32
+    name: *u8
+    name_max: u32
+    comment: *u8
+    comm_max: u32
+    hcrc: i32
+    done: i32
+}
+
+// Constants & Enums
+
+// Flush values
+let Z_NO_FLUSH = 0
+let Z_PARTIAL_FLUSH = 1
+let Z_SYNC_FLUSH = 2
+let Z_FULL_FLUSH = 3
+let Z_FINISH = 4
+let Z_BLOCK = 5
+let Z_TREES = 6
+
+// Return codes
+let Z_OK = 0
+let Z_STREAM_END = 1
+let Z_NEED_DICT = 2
+let Z_ERRNO = -1
+let Z_STREAM_ERROR = -2
+let Z_DATA_ERROR = -3
+let Z_MEM_ERROR = -4
+let Z_BUF_ERROR = -5
+let Z_VERSION_ERROR = -6
+
+// Compression levels
+let Z_NO_COMPRESSION = 0
+let Z_BEST_SPEED = 1
+let Z_BEST_COMPRESSION = 9
+let Z_DEFAULT_COMPRESSION = -1
+
+// Compression strategies
+let Z_FILTERED = 1
+let Z_HUFFMAN_ONLY = 2
+let Z_RLE = 3
+let Z_FIXED = 4
+let Z_DEFAULT_STRATEGY = 0
+
+// Data types
+let Z_BINARY = 0
+let Z_TEXT = 1
+let Z_ASCII = 1
+let Z_UNKNOWN = 2
+
+// Compression method
+let Z_DEFLATED = 8
+
+// Null pointer
+let Z_NULL = 0
+
+// Version
+let ZLIB_VERSION = "1.3.2"
+let ZLIB_VERNUM = 0x1320
+let ZLIB_VER_MAJOR = 1
+let ZLIB_VER_MINOR = 3
+let ZLIB_VER_REVISION = 2
+let ZLIB_VER_SUBREVISION = 0
+
+// Basic functions
+def zlibVersion() -> *u8
+
+// Deflate (compression) API
+def deflateInit(strm: *z_stream, level: i32) -> i32
+def deflateInit2(strm: *z_stream, level: i32, method: i32, windowBits: i32, memLevel: i32, strategy: i32) -> i32
+def deflate(strm: *z_stream, flush: i32) -> i32
+def deflateEnd(strm: *z_stream) -> i32
+def deflateReset(strm: *z_stream) -> i32
+def deflateParams(strm: *z_stream, level: i32, strategy: i32) -> i32
+def deflateBound(strm: *z_stream, sourceLen: usize) -> usize
+def deflatePending(strm: *z_stream, pending: *u32, bits: *i32) -> i32
+def deflateCopy(dest: *z_stream, source: *z_stream) -> i32
+def deflateSetDictionary(strm: *z_stream, dictionary: *u8, dictLength: u32) -> i32
+def deflateGetDictionary(strm: *z_stream, dictionary: *u8, dictLength: *u32) -> i32
+def deflateTune(strm: *z_stream, goodLength: i32, maxLazy: i32, niceLength: i32, maxChain: i32) -> i32
+def deflatePrime(strm: *z_stream, bits: i32, value: i32) -> i32
+def deflateUsed(strm: *z_stream, bits: *i32) -> i32
+def deflateSetHeader(strm: *z_stream, head: *gz_header) -> i32
+def deflateResetKeep(strm: *z_stream) -> i32
+
+// Inflate (decompression) API
+def inflateInit(strm: *z_stream) -> i32
+def inflateInit2(strm: *z_stream, windowBits: i32) -> i32
+def inflate(strm: *z_stream, flush: i32) -> i32
+def inflateEnd(strm: *z_stream) -> i32
+def inflateReset(strm: *z_stream) -> i32
+def inflateReset2(strm: *z_stream, windowBits: i32) -> i32
+def inflateSetDictionary(strm: *z_stream, dictionary: *u8, dictLength: u32) -> i32
+def inflateGetDictionary(strm: *z_stream, dictionary: *u8, dictLength: *u32) -> i32
+def inflateSync(strm: *z_stream) -> i32
+def inflatePrime(strm: *z_stream, bits: i32, value: i32) -> i32
+def inflateMark(strm: *z_stream) -> i64
+def inflateGetHeader(strm: *z_stream, head: *gz_header) -> i32
+def inflateCopy(dest: *z_stream, source: *z_stream) -> i32
+def inflateBackInit(strm: *z_stream, windowBits: i32, window: *u8) -> i32
+def inflateBack(strm: *z_stream, in_func: *u0, in_desc: *u0, out: *u0, out_desc: *u0) -> i32
+def inflateBackEnd(strm: *z_stream) -> i32
+def inflateResetKeep(strm: *z_stream) -> i32
+
+// Utility functions
+def compress(dest: *u8, destLen: *usize, source: *u8, sourceLen: usize) -> i32
+def compress2(dest: *u8, destLen: *usize, source: *u8, sourceLen: usize, level: i32) -> i32
+def compressBound(sourceLen: usize) -> usize
+def uncompress(dest: *u8, destLen: *usize, source: *u8, sourceLen: usize) -> i32
+def uncompress2(dest: *u8, destLen: *usize, source: *u8, sourceLen: *usize) -> i32
+
+// Checksum functions
+def adler32(adler: usize, buf: *u8, len: u32) -> usize
+def adler32_combine(adler1: usize, adler2: usize, len2: i64) -> usize
+def crc32(crc: usize, buf: *u8, len: u32) -> usize
+def crc32_combine(crc1: usize, crc2: usize, len2: i64) -> usize
+def crc32_combine_gen(len2: i64) -> usize
+def crc32_combine_op(crc1: usize, crc2: usize, op: usize) -> usize
+
+// Compile flags
+def zlibCompileFlags() -> usize
+
+// Gzip file access functions
+def gzopen(path: *u8, mode: *u8) -> *u0
+def gzdopen(fd: i32, mode: *u8) -> *u0
+def gzbuffer(file: *u0, size: u32) -> i32
+def gzsetparams(file: *u0, level: i32, strategy: i32) -> i32
+def gzread(file: *u0, buf: *u0, len: u32) -> i32
+def gzfread(buf: *u0, size: usize, nitems: usize, file: *u0) -> usize
+def gzwrite(file: *u0, buf: *u0, len: u32) -> i32
+def gzfwrite(buf: *u0, size: usize, nitems: usize, file: *u0) -> usize
+def gzprintf(file: *u0, format: *u8, ...) -> i32
+def gzputs(file: *u0, s: *u8) -> i32
+def gzgets(file: *u0, buf: *u8, len: i32) -> *u8
+def gzputc(file: *u0, c: i32) -> i32
+def gzgetc(file: *u0) -> i32
+def gzungetc(c: i32, file: *u0) -> i32
+def gzflush(file: *u0, flush: i32) -> i32
+def gzseek(file: *u0, offset: i64, whence: i32) -> i64
+def gzrewind(file: *u0) -> i32
+def gztell(file: *u0) -> i64
+def gzoffset(file: *u0) -> i64
+def gzeof(file: *u0) -> i32
+def gzdirect(file: *u0) -> i32
+def gzclose(file: *u0) -> i32
+def gzclose_r(file: *u0) -> i32
+def gzclose_w(file: *u0) -> i32
+def gzerror(file: *u0, errnum: *i32) -> *u8
+def gzclearerr(file: *u0)
+
+// Error and additional functions
+def zError(err: i32) -> *u8
+def inflateSyncPoint(strm: *z_stream) -> i32
+def get_crc_table() -> *u64
+def inflateUndermine(strm: *z_stream, subvert: i32) -> i32
+def inflateValidate(strm: *z_stream, check: i32) -> i32
+def inflateCodesUsed(strm: *z_stream) -> usize

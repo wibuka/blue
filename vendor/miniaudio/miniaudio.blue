@@ -1,0 +1,492 @@
+// Primitive Aliases
+
+using ma_result i32
+
+using ma_bool8 u8
+using ma_bool32 u32
+
+using ma_int8 i8
+using ma_uint8 u8
+
+using ma_int16 i16
+using ma_uint16 u16
+
+using ma_int32 i32
+using ma_uint32 u32
+
+using ma_int64 i64
+using ma_uint64 u64
+
+// Core Types
+
+struct ma_engine
+struct ma_engine_config
+struct ma_sound
+struct ma_sound_group
+
+struct ma_decoder
+struct ma_decoder_config
+
+struct ma_encoder
+struct ma_encoder_config
+
+struct ma_device
+struct ma_device_config
+
+struct ma_context
+struct ma_context_config
+
+struct ma_resource_manager
+struct ma_resource_manager_config
+struct ma_resource_manager_data_source
+
+struct ma_node_graph
+struct ma_node_graph_config
+struct ma_node
+struct ma_node_config
+
+struct ma_data_source
+struct ma_data_source_node
+
+struct ma_lpf_node
+struct ma_hpf_node
+struct ma_bpf_node
+struct ma_notch_node
+struct ma_peak_node
+struct ma_loshelf_node
+struct ma_hishelf_node
+struct ma_delay_node
+struct ma_reverb_node
+
+struct ma_waveform
+struct ma_waveform_config
+struct ma_noise
+struct ma_noise_config
+
+struct ma_log
+
+// Constants & Enums
+
+let MA_LOG_LEVEL_DEBUG = 0
+let MA_LOG_LEVEL_INFO = 1
+let MA_LOG_LEVEL_WARNING = 2
+let MA_LOG_LEVEL_ERROR = 3
+
+let ma_device_type_playback = 1
+let ma_device_type_capture = 2
+let ma_device_type_duplex = 3
+let ma_device_type_loopback = 4
+
+let MA_SUCCESS = 0
+
+let MA_FORMAT_UNKNOWN = 0
+let MA_FORMAT_U8 = 1
+let MA_FORMAT_S16 = 2
+let MA_FORMAT_S24 = 3
+let MA_FORMAT_S32 = 4
+let MA_FORMAT_F32 = 5
+
+let MA_WAVEFORM_TYPE_SINE = 0
+let MA_WAVEFORM_TYPE_SQUARE = 1
+let MA_WAVEFORM_TYPE_TRIANGLE = 2
+let MA_WAVEFORM_TYPE_SAWTOOTH = 3
+
+let MA_SOUND_FLAG_STREAM: u32                = 0x00000001
+let MA_SOUND_FLAG_DECODE: u32                = 0x00000002
+let MA_SOUND_FLAG_ASYNC: u32                 = 0x00000004
+let MA_SOUND_FLAG_WAIT_INIT: u32             = 0x00000008
+let MA_SOUND_FLAG_UNKNOWN_LENGTH: u32        = 0x00000010
+let MA_SOUND_FLAG_LOOPING: u32               = 0x00000020
+
+let MA_SOUND_FLAG_NO_DEFAULT_ATTACHMENT: u32 = 0x00001000
+let MA_SOUND_FLAG_NO_PITCH: u32              = 0x00002000
+let MA_SOUND_FLAG_NO_SPATIALIZATION: u32     = 0x00004000
+
+// Version API
+
+def ma_version(
+    major: *ma_uint32,
+    minor: *ma_uint32,
+    revision: *ma_uint32
+)
+
+def ma_version_string() -> *u8
+
+// Logging API
+
+def ma_log_init(log: *ma_log) -> ma_result
+def ma_log_uninit(log: *ma_log)
+
+def ma_log_register_callback(
+    log: *ma_log,
+    callback: *u0,
+    user_data: *u0
+) -> ma_result
+
+def ma_log_set_level(
+    log: *ma_log,
+    level: i32
+) -> ma_result
+
+// Context API
+
+def ma_context_init(
+    backends: *i32,
+    backend_count: usize,
+    config: *ma_context_config,
+    context: *ma_context
+) -> ma_result
+
+def ma_context_uninit(
+    context: *ma_context
+)
+
+def ma_context_get_device_count(
+    context: *ma_context,
+    playback_count: *ma_uint32,
+    capture_count: *ma_uint32
+) -> ma_result
+
+// Device API
+
+// Config initializers allocate on the C heap (see miniaudio_shim.c) because
+// config structs stay opaque in this binding. The caller owns the pointer
+// and frees it with free() once consumed.
+
+def ma_device_config_init_heap(
+    device_type: i32
+) -> *ma_device_config
+
+def ma_device_init(
+    context: *ma_context,
+    config: *ma_device_config,
+    device: *ma_device
+) -> ma_result
+
+def ma_device_uninit(
+    device: *ma_device
+)
+
+def ma_device_start(
+    device: *ma_device
+) -> ma_result
+
+def ma_device_stop(
+    device: *ma_device
+) -> ma_result
+
+def ma_device_is_started(
+    device: *ma_device
+) -> ma_bool32
+
+def ma_device_get_info(
+    device: *ma_device,
+    device_type: i32,
+    info: *u0
+) -> ma_result
+
+def ma_device_get_context(
+    device: *ma_device
+) -> *ma_context
+
+// Decoder API
+
+def ma_decoder_config_init_heap(
+    format: i32,
+    channels: ma_uint32,
+    sample_rate: ma_uint32
+) -> *ma_decoder_config
+
+def ma_decoder_init_file(
+    file_path: *u8,
+    config: *ma_decoder_config,
+    decoder: *ma_decoder
+) -> ma_result
+
+def ma_decoder_init_memory(
+    data: *u0,
+    size: usize,
+    config: *ma_decoder_config,
+    decoder: *ma_decoder
+) -> ma_result
+
+def ma_decoder_uninit(
+    decoder: *ma_decoder
+)
+
+def ma_decoder_read_pcm_frames(
+    decoder: *ma_decoder,
+    frames_out: *u0,
+    frame_count: ma_uint64,
+    frames_read: *ma_uint64
+) -> ma_result
+
+def ma_decoder_seek_to_pcm_frame(
+    decoder: *ma_decoder,
+    frame: ma_uint64
+) -> ma_result
+
+def ma_decoder_get_cursor_in_pcm_frames(
+    decoder: *ma_decoder,
+    cursor: *ma_uint64
+) -> ma_result
+
+def ma_decoder_get_length_in_pcm_frames(
+    decoder: *ma_decoder,
+    length: *ma_uint64
+) -> ma_result
+
+def ma_decoder_get_available_frames(
+    decoder: *ma_decoder,
+    available: *ma_uint64
+) -> ma_result
+
+// Engine API
+
+def ma_engine_config_init_heap() -> *ma_engine_config
+
+def ma_engine_init(
+    config: *ma_engine_config,
+    engine: *ma_engine
+) -> ma_result
+
+def ma_engine_uninit(
+    engine: *ma_engine
+)
+
+def ma_engine_start(
+    engine: *ma_engine
+) -> ma_result
+
+def ma_engine_stop(
+    engine: *ma_engine
+) -> ma_result
+
+def ma_engine_is_started(
+    engine: *ma_engine
+) -> ma_bool32
+
+def ma_engine_get_device(
+    engine: *ma_engine
+) -> *ma_device
+
+def ma_engine_get_endpoint(
+    engine: *ma_engine
+) -> *ma_node
+
+def ma_engine_get_resource_manager(
+    engine: *ma_engine
+) -> *ma_resource_manager
+
+def ma_engine_play_sound(
+    engine: *ma_engine,
+    file_path: *u8,
+    sound_group: *ma_sound_group
+) -> ma_result
+
+def ma_engine_play_sound_ex(
+    engine: *ma_engine,
+    file_path: *u8,
+    flags: u32,
+    sound_group: *ma_sound_group,
+    end_callback: *u0,
+    user_data: *u0
+) -> ma_result
+
+// Sound API
+
+def ma_sound_init_from_file(
+    engine: *ma_engine,
+    file_path: *u8,
+    flags: u32,
+    group: *ma_sound_group,
+    end_callback: *u0,
+    sound: *ma_sound
+) -> ma_result
+
+def ma_sound_init_from_memory(
+    engine: *ma_engine,
+    data: *u0,
+    size: usize,
+    flags: u32,
+    group: *ma_sound_group,
+    sound: *ma_sound
+) -> ma_result
+
+def ma_sound_init_copy(
+    engine: *ma_engine,
+    existing_sound: *ma_sound,
+    flags: u32,
+    group: *ma_sound_group,
+    sound: *ma_sound
+) -> ma_result
+
+def ma_sound_uninit(
+    sound: *ma_sound
+)
+
+def ma_sound_start(
+    sound: *ma_sound
+) -> ma_result
+
+def ma_sound_stop(
+    sound: *ma_sound
+) -> ma_result
+
+def ma_sound_at_end(
+    sound: *ma_sound
+) -> ma_bool32
+
+// Sound Properties
+def ma_sound_set_volume(sound: *ma_sound, volume: f32)
+def ma_sound_get_volume(sound: *ma_sound) -> f32
+
+def ma_sound_set_pan(sound: *ma_sound, pan: f32)
+def ma_sound_get_pan(sound: *ma_sound) -> f32
+
+def ma_sound_set_pitch(sound: *ma_sound, pitch: f32)
+def ma_sound_get_pitch(sound: *ma_sound) -> f32
+
+def ma_sound_set_looping(sound: *ma_sound, looping: ma_bool32)
+def ma_sound_is_looping(sound: *ma_sound) -> ma_bool32
+
+// Sound Spatialization
+def ma_sound_set_position(sound: *ma_sound, x: f32, y: f32, z: f32)
+def ma_sound_get_position(sound: *ma_sound, x: *f32, y: *f32, z: *f32)
+def ma_sound_set_direction(sound: *ma_sound, x: f32, y: f32, z: f32)
+def ma_sound_set_velocity(sound: *ma_sound, x: f32, y: f32, z: f32)
+def ma_sound_set_min_distance(sound: *ma_sound, distance: f32)
+def ma_sound_set_max_distance(sound: *ma_sound, distance: f32)
+def ma_sound_set_rolloff(sound: *ma_sound, rolloff: f32)
+def ma_sound_set_doppler_factor(sound: *ma_sound, factor: f32)
+def ma_sound_set_directional_attenuation_factor(sound: *ma_sound, factor: f32)
+
+// Sound Positioning & Time
+def ma_sound_seek_to_pcm_frame(sound: *ma_sound, frame: ma_uint64) -> ma_result
+def ma_sound_get_cursor_in_pcm_frames(sound: *ma_sound, cursor: *ma_uint64) -> ma_result
+def ma_sound_get_length_in_pcm_frames(sound: *ma_sound, length: *ma_uint64) -> ma_result
+def ma_sound_get_cursor_in_seconds(sound: *ma_sound, cursor: *f32) -> ma_result
+def ma_sound_get_length_in_seconds(sound: *ma_sound, length: *f32) -> ma_result
+
+// Sound Groups API
+
+def ma_sound_group_init(
+    engine: *ma_engine,
+    flags: u32,
+    parent: *ma_sound_group,
+    group: *ma_sound_group
+) -> ma_result
+
+def ma_sound_group_uninit(group: *ma_sound_group)
+def ma_sound_group_start(group: *ma_sound_group) -> ma_result
+def ma_sound_group_stop(group: *ma_sound_group) -> ma_result
+
+def ma_sound_group_set_volume(group: *ma_sound_group, volume: f32)
+def ma_sound_group_get_volume(group: *ma_sound_group) -> f32
+
+def ma_sound_group_set_pitch(group: *ma_sound_group, pitch: f32)
+def ma_sound_group_get_pitch(group: *ma_sound_group) -> f32
+
+// Node Graph API
+
+def ma_node_graph_config_init_heap(channels: ma_uint32) -> *ma_node_graph_config
+
+def ma_node_graph_init(
+    config: *ma_node_graph_config,
+    graph: *ma_node_graph
+) -> ma_result
+
+def ma_node_graph_uninit(graph: *ma_node_graph)
+
+def ma_node_graph_read_pcm_frames(
+    graph: *ma_node_graph,
+    frames_out: *u0,
+    frame_count: ma_uint64,
+    frames_read: *ma_uint64
+) -> ma_result
+
+def ma_node_graph_set_endpoint(
+    graph: *ma_node_graph,
+    node: *ma_node
+) -> ma_result
+
+// Data Source API
+
+def ma_data_source_init(data_source: *ma_data_source) -> ma_result
+def ma_data_source_uninit(data_source: *ma_data_source)
+
+def ma_data_source_read_pcm_frames(
+    data_source: *ma_data_source,
+    frames_out: *u0,
+    frame_count: ma_uint64,
+    frames_read: *ma_uint64
+) -> ma_result
+
+def ma_data_source_seek_to_pcm_frame(
+    data_source: *ma_data_source,
+    frame: ma_uint64
+) -> ma_result
+
+def ma_data_source_get_cursor_in_pcm_frames(
+    data_source: *ma_data_source,
+    cursor: *ma_uint64
+) -> ma_result
+
+def ma_data_source_get_length_in_pcm_frames(
+    data_source: *ma_data_source,
+    length: *ma_uint64
+) -> ma_result
+
+
+
+def ma_waveform_alloc() -> *ma_waveform
+def ma_decoder_alloc() -> *ma_decoder
+def ma_engine_alloc() -> *ma_engine
+def ma_sound_alloc() -> *ma_sound
+
+def ma_waveform_config_init_heap(
+    format: i32,
+    channels: ma_uint32,
+    sample_rate: ma_uint32,
+    waveform_type: i32,
+    amplitude: f64,
+    frequency: f64
+) -> *ma_waveform_config
+
+def ma_waveform_init(
+    config: *ma_waveform_config,
+    waveform: *ma_waveform
+) -> ma_result
+
+def ma_waveform_read_pcm_frames(
+    waveform: *ma_waveform,
+    frames_out: *u0,
+    frame_count: ma_uint64,
+    frames_read: *ma_uint64
+) -> ma_result
+
+def ma_waveform_seek_to_pcm_frame(
+    waveform: *ma_waveform,
+    frame: ma_uint64
+) -> ma_result
+
+def ma_noise_init(
+    config: *ma_noise_config,
+    noise: *ma_noise
+) -> ma_result
+
+def ma_noise_uninit(
+    noise: *ma_noise
+)
+
+def ma_noise_read_pcm_frames(
+    noise: *ma_noise,
+    frames_out: *u0,
+    frame_count: ma_uint64,
+    frames_read: *ma_uint64
+) -> ma_result
+
+def ma_noise_seek_to_pcm_frame(
+    noise: *ma_noise,
+    frame: ma_uint64
+) -> ma_result

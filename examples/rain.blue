@@ -1,0 +1,847 @@
+import "core/libc"
+import "vendor/miniaudio"
+import "vendor/luci"
+
+using begin LUCI_begin_drawing
+using end LUCI_end_drawing
+using Texture LUCI_Texture
+using Rectangle LUCI_Rectangle
+
+// Constants
+
+let DEBUG = false
+let TARGET_FRAME_TIME: f64 = 1.0 / 144.0
+
+// Rain
+let MAX_RAIN_COUNT: i32 = 8
+
+// Player blink
+let BLINK_MIN_TIME: f32 = 1.0
+let BLINK_MAX_TIME: f32 = 3.0
+let BLINK_DURATION: f32 = 0.2
+
+// Umbrella
+let UMBRELLA_WAIT_MIN: f32      = 5.0
+let UMBRELLA_WAIT_MAX: f32      = 8.0
+let UMBRELLA_OPEN_MIN_TIME: f32 = 2.0
+let UMBRELLA_OPEN_MAX_TIME: f32 = 5.0
+let UMBRELLA_RISE_SPEED: f32    = 800.0
+let UMBRELLA_SINK_SPEED: f32    = 360.0
+let UMBRELLA_FRAME_TIME: f32    = 0.12
+let UMBRELLA_START_Y: f32       = 420.0
+let UMBRELLA_END_Y: f32         = 290.0
+let UMBRELLA_MAX_X: f32         = 300.0
+
+let UMBRELLA_WAITING: i32 = 0
+let UMBRELLA_RISING: i32  = 1
+let UMBRELLA_OPENING: i32 = 2
+let UMBRELLA_OPEN: i32    = 3
+let UMBRELLA_CLOSING: i32 = 4
+let UMBRELLA_SINKING: i32 = 5
+
+// Game over
+let GAME_OVER_SHAKE_DURATION: f32 = 0.25
+let GAME_OVER_SHAKE_AMOUNT:   i32 = 4
+
+// Score effects
+let NUMBER_TIMELIFE: f32    = 0.5
+let NUMBER_P1: Rectangle    = Rectangle{ 0, 0, 16, 16}
+let NUMBER_MIS: Rectangle = Rectangle{16, 0, 32, 16}
+
+// Types
+
+struct Hitbox {
+    offset_x: f32
+    offset_y: f32
+    w: f32
+    h: f32
+}
+
+struct Player {
+    x: f32
+    y: f32
+    velocity_x: f32
+    hitbox: Hitbox
+    frame: i32
+    texture: Texture
+    rects: [3]Rectangle
+    is_wet: bool
+    is_blinking: bool
+    blink_timer: f32
+    blink_duration: f32
+    flip: f32
+}
+
+struct Umbrella {
+    x: f32
+    y: f32
+    enabled: bool
+    state: i32
+    timer: f32
+    animation_timer: f32
+    hitbox: Hitbox
+    frame: i32
+    texture: Texture
+    rects: [3]Rectangle
+    flip: f32
+    sound: *ma_sound
+}
+
+struct Number {
+    x: f32
+    y: f32
+    enabled: bool
+    texture: Texture
+    rect: Rectangle
+    time: f32
+}
+
+struct Raindrop {
+    x: f32
+    y: f32
+    speed: f32
+    hitbox: Hitbox
+    sound: *ma_sound
+}
+
+// Globals
+
+var score: i32
+var game_over: bool
+var game_over_timer: f32
+var game_time: f32
+var rain_count: i32
+
+var player: Player
+var umbrella: Umbrella
+var rain: [8]Raindrop
+var number: [8]Number
+
+var rain_texture: Texture
+var background_texture: Texture
+var number_texture: Texture
+var game_over_texture: Texture
+
+var engine:        *ma_engine
+var music:         *ma_sound
+var explosion_sfx: *ma_sound
+var up_sfx:        *ma_sound
+var coin_sfx:      *ma_sound
+
+// Utilities
+
+def get_time() -> f64 {
+    var ts: timespec
+    clock_gettime(CLOCK_MONOTONIC, &ts)
+    return ts.tv_sec as f64 + ts.tv_nsec as f64 / 1000000000.0
+}
+
+def random_range(min: f32, max: f32) -> f32 {
+    return min + (rand() % 1000) as f32 / 1000.0 * (max - min)
+}
+
+def random_blink_time() -> f32 {
+    return random_range(BLINK_MIN_TIME, BLINK_MAX_TIME)
+}
+
+def random_umbrella_wait() -> f32 {
+    return random_range(UMBRELLA_WAIT_MIN, UMBRELLA_WAIT_MAX)
+}
+
+def random_umbrella_open_time() -> f32 {
+    return random_range(UMBRELLA_OPEN_MIN_TIME, UMBRELLA_OPEN_MAX_TIME)
+}
+
+def random_umbrella_x() -> f32 {
+    return random_range(20.0, UMBRELLA_MAX_X)
+}
+
+def random_player_x() -> f32 {
+    return random_range(0.0, 320.0)
+}
+
+def check_collision(a: Hitbox, b: Hitbox, ax: f32, ay: f32, bx: f32, by: f32) -> bool {
+    var a_cx = ax + a.offset_x
+    var a_cy = ay + a.offset_y
+    var b_cx = bx + b.offset_x
+    var b_cy = by + b.offset_y
+
+    var ax_real = a_cx - a.w / 2.0
+    var ay_real = a_cy - a.h / 2.0
+    var bx_real = b_cx - b.w / 2.0
+    var by_real = b_cy - b.h / 2.0
+
+    return ax_real < bx_real + b.w and
+           ax_real + a.w > bx_real and
+           ay_real < by_real + b.h and
+           ay_real + a.h > by_real
+}
+
+def draw_sprite(texture: Texture, src: Rectangle, dst: Rectangle) {
+    var tex_width = texture.width as f32
+    var tex_height = texture.height as f32
+    
+    LUCI_draw_texture_ex(texture, src, dst, 0, 0, 0, LUCI_COLOR_WHITE)
+}
+
+// Rain
+
+def spawn_rain(index: i32) {
+    var rx = (rand() % 320) as f32
+    var ry = -((rand() % 600) + 16) as f32
+    var rspeed = 250.0 + (rand() % 200) as f32
+
+    rain[index].x = rx;
+    rain[index].y = ry;
+    rain[index].speed = rspeed;
+
+}
+
+def update_level() {
+    var new_rain_count: i32 = 1
+    var threshold: f32 = 2.0
+
+    loop {
+        if new_rain_count >= MAX_RAIN_COUNT break
+        if game_time < threshold break
+
+        new_rain_count += 1
+        threshold *= 2.0
+    }
+
+    if new_rain_count > rain_count {
+        for i in rain_count..new_rain_count {
+            spawn_rain(i)
+        }
+
+        rain_count = new_rain_count
+    }
+}
+
+// Score effects
+
+def spawn_score_effect(x: f32, y: f32, index: i32, rect: Rectangle) {
+    number[index].enabled = true
+    number[index].x       = x
+    number[index].y       = y
+    number[index].rect    = rect
+    number[index].time    = NUMBER_TIMELIFE
+}
+
+def clear_numbers() {
+    for i in 0..MAX_RAIN_COUNT {
+        number[i].enabled = false
+    }
+}
+
+def update_numbers(deltaTime: f32) {
+    for i in 0..MAX_RAIN_COUNT {
+        if number[i].time > 0 {
+            if number[i].time > NUMBER_TIMELIFE / 2 {
+                number[i].y -= deltaTime * 64
+            }
+            number[i].time -= deltaTime
+        } else {
+            number[i].enabled = false
+        }
+    }
+}
+
+// Umbrella
+
+def umbrella_wait() {
+    umbrella.enabled = false
+    umbrella.state = UMBRELLA_WAITING
+    umbrella.x = random_umbrella_x()
+    umbrella.y = UMBRELLA_START_Y
+    umbrella.frame = 0
+    umbrella.timer = random_umbrella_wait()
+    umbrella.animation_timer = 0.0
+
+    if rand() % 2 == 0 {
+        umbrella.flip = 1.0
+    } else {
+        umbrella.flip = -1.0
+    }
+}
+
+def umbrella_start_rising() {
+    umbrella.enabled = true
+    umbrella.state = UMBRELLA_RISING
+    umbrella.y = UMBRELLA_START_Y
+    umbrella.frame = 0
+    umbrella.timer = 0.0
+    umbrella.animation_timer = 0.0
+}
+
+def update_umbrella_animation(deltaTime: f32) {
+    umbrella.animation_timer += deltaTime
+
+    if umbrella.animation_timer < UMBRELLA_FRAME_TIME {
+        return
+    }
+
+    umbrella.animation_timer -= UMBRELLA_FRAME_TIME
+
+    if umbrella.state == UMBRELLA_OPENING {
+        umbrella.frame += 1
+        if umbrella.frame >= 2 {
+            umbrella.frame = 2
+            umbrella.state = UMBRELLA_OPEN
+            umbrella.timer = random_umbrella_open_time()
+            umbrella.animation_timer = 0.0
+        }
+        ma_sound_start(umbrella.sound);
+    } 
+    else if umbrella.state == UMBRELLA_CLOSING {
+        umbrella.frame -= 1
+
+        if umbrella.frame <= 0 {
+            umbrella.frame = 0
+            umbrella.state = UMBRELLA_SINKING
+            umbrella.timer = 0.0
+            umbrella.animation_timer = 0.0
+        }
+    }
+}
+
+def update_umbrella(deltaTime: f32) {
+    if umbrella.state == UMBRELLA_WAITING {
+        umbrella.timer -= deltaTime
+
+        if umbrella.timer <= 0.0 {
+            umbrella_start_rising()
+        }
+
+        return
+    }
+
+    if umbrella.state == UMBRELLA_RISING {
+        umbrella.y -= UMBRELLA_RISE_SPEED * deltaTime
+
+        if umbrella.y <= UMBRELLA_END_Y {
+            umbrella.y = UMBRELLA_END_Y
+            umbrella.state = UMBRELLA_OPENING
+            umbrella.frame = 0
+            umbrella.animation_timer = 0.0
+        }
+
+        return
+    }
+
+    if umbrella.state == UMBRELLA_OPENING {
+        update_umbrella_animation(deltaTime)
+        return
+    }
+
+    if umbrella.state == UMBRELLA_OPEN {
+        umbrella.timer -= deltaTime
+
+        if umbrella.timer <= 0.0 {
+            umbrella.state = UMBRELLA_CLOSING
+            umbrella.frame = 2
+            umbrella.animation_timer = 0.0
+        }
+
+        return
+    }
+
+    if umbrella.state == UMBRELLA_CLOSING {
+        update_umbrella_animation(deltaTime)
+        return
+    }
+
+    if umbrella.state == UMBRELLA_SINKING {
+        umbrella.y += UMBRELLA_SINK_SPEED * deltaTime
+
+        if umbrella.y >= UMBRELLA_START_Y {
+            umbrella_wait()
+        }
+    }
+}
+
+def get_umbrella_effective_hitbox() -> Hitbox {
+    var hb = umbrella.hitbox
+    if umbrella.flip < 0.0 {
+        hb.offset_x = -umbrella.hitbox.offset_x
+    }
+    return hb
+}
+
+// Init
+
+def init() {
+    game_time = 0.0
+    rain_count = 1
+    score = 0
+    game_over = false
+    game_over_timer = 0.0
+
+    ma_sound_seek_to_pcm_frame(music, 0)
+    ma_sound_start(music)
+
+    player = Player{
+        random_player_x(),
+        340.0,
+        0.0,
+        Hitbox{0.0, -32.0, 22.0, 8.0},
+        0,
+        LUCI_load_texture("asset/head.png"),
+        [
+            Rectangle{0, 0, 32, 48},
+            Rectangle{32, 0, 32, 48},
+            Rectangle{64, 0, 32, 48}
+        ],
+        false,
+        false,
+        random_blink_time(),
+        0.0,
+        1.0
+    }
+
+    umbrella = Umbrella{
+        random_umbrella_x(),
+        UMBRELLA_START_Y,
+        false,
+        UMBRELLA_WAITING,
+        random_umbrella_wait(),
+        0.0,
+        Hitbox{0.0, -54.0, 76.0, 32.0},
+        0,
+        LUCI_load_texture("asset/umbrella.png"),
+        [
+            Rectangle{0, 0, 48, 96},
+            Rectangle{48, 0, 48, 96},
+            Rectangle{96, 0, 48, 96}
+        ],
+        1.0
+        up_sfx
+    }
+
+    rain_texture       = LUCI_load_texture("asset/raindrop.png")
+    background_texture = LUCI_load_texture("asset/background.png")
+    number_texture     = LUCI_load_texture("asset/number.png")
+    game_over_texture  = LUCI_load_texture("asset/game_over.png")
+
+    for i in 0..MAX_RAIN_COUNT {
+        rain[i].hitbox = Hitbox{0.0, 0.0, 18.0, 28.0}
+        rain[i].sound = ma_sound_alloc()
+
+        ma_sound_init_copy(
+            engine,
+            coin_sfx,
+            0,
+            nil,
+            rain[i].sound
+        )
+
+        ma_sound_set_volume(rain[i].sound, 0.25)
+
+        spawn_rain(i)
+    }
+
+    for i in 0..MAX_RAIN_COUNT {
+        number[i].enabled = false
+        number[i].texture = number_texture
+        number[i].rect    = NUMBER_P1
+    }
+}
+
+// Update
+
+def update_player_movement(deltaTime: f32) {
+    var acceleration: f32 = 1000.0
+    var maxSpeed: f32 = 500.0
+    var friction: f32 = 800.0
+    var direction: f32 = 0.0
+
+    if LUCI_is_key_down(LUCI_KEY_RIGHT) or LUCI_is_key_down(LUCI_KEY_D) {
+        direction = 1.0
+    }
+
+    if LUCI_is_key_down(LUCI_KEY_LEFT) or LUCI_is_key_down(LUCI_KEY_A) {
+        direction = -1.0
+    }
+
+    if direction != 0.0 {
+        player.velocity_x += acceleration * direction * deltaTime
+
+        if player.velocity_x > maxSpeed {
+            player.velocity_x = maxSpeed
+        }
+
+        if player.velocity_x < -maxSpeed {
+            player.velocity_x = -maxSpeed
+        }
+    } else {
+        if player.velocity_x > 0.0 {
+            player.velocity_x -= friction * deltaTime
+
+            if player.velocity_x < 0.0 {
+                player.velocity_x = 0.0
+            }
+        } else if player.velocity_x < 0.0 {
+            player.velocity_x += friction * deltaTime
+
+            if player.velocity_x > 0.0 {
+                player.velocity_x = 0.0
+            }
+        }
+    }
+
+    player.x += player.velocity_x * deltaTime
+
+    if player.x <= 0.0 {
+        player.x = 0.0
+        player.velocity_x = 0.0
+        player.flip = -1.0
+    }
+
+    if player.x >= 320.0 {
+        player.x = 320.0
+        player.velocity_x = 0.0
+        player.flip = 1.0
+    }
+
+    if player.velocity_x > 200.0 {
+        player.flip = -1.0
+    } else if player.velocity_x < -200.0 {
+        player.flip = 1.0
+    }
+}
+
+def update_rain(deltaTime: f32) {
+    player.is_wet = false
+
+    for i in 0..rain_count {
+        rain[i].y += rain[i].speed * deltaTime
+
+        if rain[i].y > 380.0 {
+            score += 1
+            spawn_score_effect(rain[i].x, rain[i].y - 4, i, NUMBER_P1)
+            ma_sound_start(rain[i].sound)
+            spawn_rain(i)
+        }
+
+        if umbrella.enabled and umbrella.frame == 2 {
+            var u_hitbox = get_umbrella_effective_hitbox()
+            if check_collision(u_hitbox, rain[i].hitbox, umbrella.x, umbrella.y, rain[i].x, rain[i].y) {
+                score += 1
+                spawn_score_effect(rain[i].x, rain[i].y - 4, i, NUMBER_P1)
+                ma_sound_start(rain[i].sound)
+                spawn_rain(i)
+                continue
+            }
+        }
+
+        if check_collision(player.hitbox, rain[i].hitbox, player.x, player.y, rain[i].x, rain[i].y) {
+            player.is_wet = true
+        }
+    }
+}
+
+def trigger_game_over() {
+    game_over = true
+    game_over_timer = GAME_OVER_SHAKE_DURATION
+
+    ma_sound_start(explosion_sfx)
+    ma_sound_stop(music)
+
+    clear_numbers()
+    spawn_score_effect(player.x, player.y - 32, 0, NUMBER_MIS)
+}
+
+def update_blink(deltaTime: f32) {
+    if player.is_blinking {
+        player.blink_duration -= deltaTime
+
+        if player.blink_duration <= 0.0 {
+            player.is_blinking = false
+            player.blink_timer = random_blink_time()
+        }
+    } else {
+        player.blink_timer -= deltaTime
+
+        if player.blink_timer <= 0.0 {
+            player.is_blinking = true
+            player.blink_duration = BLINK_DURATION
+        }
+    }
+}
+
+def update_player_frame() {
+    if player.is_wet {
+        player.frame = 2
+    } else if player.is_blinking {
+        player.frame = 1
+    } else {
+        player.frame = 0
+    }
+}
+
+def update_game_over(deltaTime: f32) {
+    if LUCI_is_key_down(LUCI_KEY_R) {
+        init()
+    }
+    if LUCI_is_key_down(LUCI_KEY_Q) {
+        LUCI_close()
+    }
+
+    game_time += deltaTime
+    update_level()
+    umbrella.enabled = false
+
+    if game_over_timer > 0.0 {
+        game_over_timer -= deltaTime
+        if game_over_timer < 0.0 {
+            game_over_timer = 0.0
+        }
+    }
+
+    for i in 0..rain_count {
+        rain[i].y += rain[i].speed * deltaTime
+
+        if rain[i].y > 400.0 {
+            spawn_rain(i)
+        }
+
+        if check_collision(player.hitbox, rain[i].hitbox, player.x, player.y, rain[i].x, rain[i].y) {
+            spawn_rain(i)
+        }
+    }
+
+    update_numbers(deltaTime)
+    player.frame = 2
+}
+
+def update(deltaTime: f32) {
+    if game_over {
+        update_game_over(deltaTime)
+        return
+    }
+
+    game_time += deltaTime
+    update_level()
+    update_umbrella(deltaTime)
+    update_player_movement(deltaTime)
+    update_rain(deltaTime)
+
+    if player.is_wet {
+        trigger_game_over()
+    }
+
+    update_blink(deltaTime)
+    update_numbers(deltaTime)
+    update_player_frame()
+}
+
+// Draw
+
+def draw_background() {
+    LUCI_draw_texture_ex(
+        background_texture,
+        Rectangle{-8, -8, 96 * 4, 96 * 4},
+        Rectangle{0, 0, 192 * 4, 192 * 4},
+        0, 0, 0,
+        LUCI_COLOR_WHITE
+    )
+}
+
+def draw_umbrella() {
+    if !umbrella.enabled return
+
+    var src = umbrella.rects[umbrella.frame]
+    var dst = Rectangle{
+        umbrella.x,
+        umbrella.y,
+        src.width * 2.0 * umbrella.flip,
+        src.height * 2.0
+    }
+
+    LUCI_draw_texture_ex(
+        umbrella.texture, 
+        src, 
+        dst,
+        dst.width / 2,
+        dst.height / 2,
+        0,
+        LUCI_COLOR_WHITE
+    )
+}
+
+def draw_player() {
+    var src = player.rects[player.frame]
+    var dst = Rectangle{
+        player.x,
+        player.y,
+        src.width * 2.0 * player.flip,
+        src.height * 2.0
+    }
+    LUCI_draw_texture_ex(
+        player.texture, 
+        src, 
+        dst,
+        dst.width / 2,
+        dst.height / 2,
+        0,
+        LUCI_COLOR_WHITE
+    )
+}
+
+def draw_rain() {
+    var src = Rectangle{
+        0,
+        0,
+        rain_texture.width as f32,
+        rain_texture.height as f32
+    }
+
+    for i in 0..rain_count {
+        var dst = Rectangle{
+            rain[i].x - src.width,
+            rain[i].y - src.height,
+            src.width * 2.0,
+            src.height * 2.0
+        }
+
+        draw_sprite(rain_texture, src, dst)
+    }
+}
+
+def draw_score() {
+    var score_str: [7]u8
+    snprintf(&score_str[0], sizeof(score_str), "%06d", score)
+
+    LUCI_draw_rectangle(0, 0, 80, 24, LUCI_COLOR_BLACK)
+    LUCI_draw_text(&score_str[0], 4, 2, LUCI_COLOR_YELLOW)
+}
+
+def draw_game_over() {
+    if !game_over return
+
+    var shake_x: f32 = 0.0
+    var shake_y: f32 = 0.0
+
+    if game_over_timer > 0.0 {
+        shake_x = (rand() % (GAME_OVER_SHAKE_AMOUNT * 2 + 1) - GAME_OVER_SHAKE_AMOUNT) as f32
+        shake_y = (rand() % (GAME_OVER_SHAKE_AMOUNT * 2 + 1) - GAME_OVER_SHAKE_AMOUNT) as f32
+    }
+    
+    draw_sprite(
+        game_over_texture,
+        Rectangle{
+            0,
+            0,
+            game_over_texture.width as f32,
+            game_over_texture.height as f32
+        },
+        Rectangle{
+            84  + shake_x,
+            158 + shake_y,
+            game_over_texture.width as f32 * 2,
+            game_over_texture.height as f32 * 2
+        }
+    )
+}
+
+def draw_numbers() {
+    for i in 0..MAX_RAIN_COUNT {
+        if !number[i].enabled continue
+
+        var dst = Rectangle{
+            number[i].x - number[i].rect.width,
+            number[i].y - number[i].rect.height,
+            number[i].rect.width * 2,
+            number[i].rect.height * 2
+        }
+
+        draw_sprite(number[i].texture, number[i].rect, dst)
+    }
+}
+
+def draw_debug() {
+    var p_hb_cx = player.x + player.hitbox.offset_x
+    var p_hb_cy = player.y + player.hitbox.offset_y
+    LUCI_draw_box(p_hb_cx, p_hb_cy, player.hitbox.w, player.hitbox.h, LUCI_COLOR_RED)
+
+    for i in 0..rain_count {
+        var r_hb_cx = rain[i].x + rain[i].hitbox.offset_x
+        var r_hb_cy = rain[i].y + rain[i].hitbox.offset_y
+        LUCI_draw_box(r_hb_cx, r_hb_cy, rain[i].hitbox.w, rain[i].hitbox.h, LUCI_COLOR_RED)
+    }
+
+    if umbrella.enabled and umbrella.frame == 2 {
+        var u_hb = get_umbrella_effective_hitbox()
+        var u_hb_cx = umbrella.x + u_hb.offset_x
+        var u_hb_cy = umbrella.y + u_hb.offset_y
+        LUCI_draw_box(u_hb_cx, u_hb_cy, u_hb.w, u_hb.h, LUCI_COLOR_RED)
+    }
+}
+
+def draw() {
+    draw_background()
+    draw_umbrella()
+    draw_player()
+    draw_rain()
+    draw_score()
+    draw_game_over()
+    draw_numbers()
+
+    if DEBUG {
+        draw_debug()
+    }
+}
+
+// Main
+def init_audio() {
+    engine        = ma_engine_alloc()
+    music         = ma_sound_alloc()
+    explosion_sfx = ma_sound_alloc()
+    coin_sfx      = ma_sound_alloc()
+    up_sfx        = ma_sound_alloc()
+
+    ma_engine_init(nil, engine)
+    ma_sound_init_from_file(engine, "asset/9n31.wav", MA_SOUND_FLAG_DECODE, nil, nil, music)
+    ma_sound_init_from_file(engine, "asset/explosion.wav", MA_SOUND_FLAG_DECODE, nil, nil, explosion_sfx)
+    ma_sound_init_from_file(engine, "asset/up.wav", MA_SOUND_FLAG_DECODE, nil, nil, up_sfx)
+    ma_sound_init_from_file(engine, "asset/coin.wav", MA_SOUND_FLAG_DECODE, nil, nil, coin_sfx)
+
+    ma_sound_set_looping(music, 1)
+    ma_sound_set_volume(music, 1)
+    ma_sound_set_volume(explosion_sfx, 0.25)
+    ma_sound_set_volume(up_sfx, 0.25)
+}
+
+def main() {
+    LUCI_init()
+    LUCI_window_resize(326, 384)
+    LUCI_window_resizable(false)
+
+    init_audio()
+    init()
+
+    var lastTime = get_time()
+
+    loop {
+        if LUCI_window_should_close() {
+            break
+        }
+
+        var currentTime = get_time()
+        var deltaTime = (currentTime - lastTime) as f32
+
+        update(deltaTime)
+
+        begin()
+        draw()
+        end()
+
+        loop {
+            if get_time() - currentTime >= TARGET_FRAME_TIME {
+                break
+            }
+        }
+
+        lastTime = currentTime
+    }
+}

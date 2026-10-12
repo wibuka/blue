@@ -1,0 +1,26 @@
+name = "miniaudio"
+version = "0.11.25"
+
+import = [
+    "miniaudio.blue"
+]
+
+[platform.linux]
+link = [
+    "linux/libminiaudio.a",
+    "-lm",
+    "-ldl",
+    "-lpthread",
+]
+[platform.macos]
+link = [
+    "macos/libminiaudio.a",
+    "-lm",
+    "-lpthread",
+]
+[platform.windows]
+link = [
+    "windows/miniaudio.lib",
+    "-lm",
+    "-lpthread",
+]

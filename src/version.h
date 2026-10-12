@@ -1,0 +1,7 @@
+#pragma once
+
+#define BLUE_VERSION_MAJOR 0
+#define BLUE_VERSION_MINOR 0
+#define BLUE_VERSION_PATCH 20261011
+
+#define BLUE_VERSION_STRING "dev-2026-10-11"

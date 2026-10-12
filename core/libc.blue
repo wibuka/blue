@@ -1,0 +1,1580 @@
+// stddef.h — Standard Definitions
+using size_t usize
+using ptrdiff_t i64
+using wchar_t i32
+struct max_align_t 
+// NOTE: NULL is Blue `nil`. offsetof needs compiler support: omitted.
+
+// stdint.h — Fixed-Width Integer Types (LP64 / Linux x86_64)
+using int8_t i8
+using int16_t i16
+using int32_t i32
+using int64_t i64
+using uint8_t u8
+using uint16_t u16
+using uint32_t u32
+using uint64_t u64
+using int_least8_t i8
+using int_least16_t i16
+using int_least32_t i32
+using int_least64_t i64
+using uint_least8_t u8
+using uint_least16_t u16
+using uint_least32_t u32
+using uint_least64_t u64
+using int_fast8_t i8
+using int_fast16_t i64
+using int_fast32_t i64
+using int_fast64_t i64
+using uint_fast8_t u8
+using uint_fast16_t u64
+using uint_fast32_t u64
+using uint_fast64_t u64
+using intptr_t i64
+using uintptr_t u64
+using intmax_t i64
+using uintmax_t u64
+
+let INT8_MIN = -128
+let INT8_MAX = 127
+let UINT8_MAX = 255
+let INT16_MIN = -32768
+let INT16_MAX = 32767
+let UINT16_MAX = 65535
+let INT32_MIN = -2147483648
+let INT32_MAX = 2147483647
+let UINT32_MAX = 4294967295
+let INT64_MIN = -9223372036854775808
+let INT64_MAX = 9223372036854775807
+let UINT64_MAX = 0xffffffffffffffff
+let INTPTR_MIN = -9223372036854775808
+let INTPTR_MAX = 9223372036854775807
+let UINTPTR_MAX = 0xffffffffffffffff
+let INTMAX_MIN = -9223372036854775808
+let INTMAX_MAX = 9223372036854775807
+let UINTMAX_MAX = 0xffffffffffffffff
+let PTRDIFF_MIN = -9223372036854775808
+let PTRDIFF_MAX = 9223372036854775807
+let SIZE_MAX = 0xffffffffffffffff
+let WCHAR_MIN = -2147483648
+let WCHAR_MAX = 2147483647
+
+// limits.h — Implementation Limits
+let CHAR_BIT = 8
+let SCHAR_MIN = -128
+let SCHAR_MAX = 127
+let UCHAR_MAX = 255
+let CHAR_MIN = -128 // Linux x86_64: plain char is signed
+let CHAR_MAX = 127
+let SHRT_MIN = -32768
+let SHRT_MAX = 32767
+let USHRT_MAX = 65535
+let INT_MIN = -2147483648
+let INT_MAX = 2147483647
+let UINT_MAX = 4294967295
+let LONG_MIN = -9223372036854775808
+let LONG_MAX = 9223372036854775807
+let ULONG_MAX = 0xffffffffffffffff
+let LLONG_MIN = -9223372036854775808
+let LLONG_MAX = 9223372036854775807
+let ULLONG_MAX = 0xffffffffffffffff
+
+// float.h — Floating-Point Characteristics (IEEE-754 binary32/64)
+let FLT_RADIX = 2
+let FLT_MANT_DIG = 24
+let DBL_MANT_DIG = 53
+let FLT_DIG = 6
+let DBL_DIG = 15
+let FLT_MIN_EXP = -125
+let DBL_MIN_EXP = -1021
+let FLT_MAX_EXP = 128
+let DBL_MAX_EXP = 1024
+let FLT_MAX = 3.40282347e+38
+let FLT_MIN = 1.17549435e-38
+let FLT_EPSILON = 1.1920929e-07
+let DBL_MAX = 1.7976931348623157e+308
+let DBL_MIN = 2.2250738585072014e-308
+let DBL_EPSILON = 2.2204460492503131e-16
+
+// stdbool.h / stdalign.h / stdnoreturn.h — Keywords, Not Declarations
+//   C11 `bool`, `true`, `false` map to Blue `bool`, `true`, `false`.
+//   `_Alignas`, `alignas`, `alignof`, `_Alignof`, `_Noreturn` and
+//   `noreturn` have no Blue equivalent and are omitted. `static_assert`
+//   needs compiler support and is omitted.
+
+// assert.h — Diagnostics
+// NOTE: `assert` itself is a function-like macro (uses NDEBUG, __FILE__,
+// __LINE__) and cannot be a plain declaration. Call __assert_fail
+// directly, or branch on your own condition.
+def __assert_fail(assertion: *u8, file: *u8, line: u32, function: *u8)
+
+// ctype.h — Character Classification and Mapping
+def isalnum(c: i32) -> i32
+def isalpha(c: i32) -> i32
+def isblank(c: i32) -> i32
+def iscntrl(c: i32) -> i32
+def isdigit(c: i32) -> i32
+def isgraph(c: i32) -> i32
+def islower(c: i32) -> i32
+def isprint(c: i32) -> i32
+def ispunct(c: i32) -> i32
+def isspace(c: i32) -> i32
+def isupper(c: i32) -> i32
+def isxdigit(c: i32) -> i32
+def tolower(c: i32) -> i32
+def toupper(c: i32) -> i32
+
+// errno.h — Error Numbers (values: Linux x86_64 / asm-generic)
+// NOTE: `errno` itself is a thread-local macro; read it through
+// __errno_location instead of declaring a global.
+def __errno_location() -> *i32
+
+let EPERM = 1
+let ENOENT = 2
+let ESRCH = 3
+let EINTR = 4
+let EIO = 5
+let ENXIO = 6
+let E2BIG = 7
+let ENOEXEC = 8
+let EBADF = 9
+let ECHILD = 10
+let EAGAIN = 11
+let EWOULDBLOCK = 11 // Alias of EAGAIN
+let ENOMEM = 12
+let EACCES = 13
+let EFAULT = 14
+let ENOTBLK = 15
+let EBUSY = 16
+let EEXIST = 17
+let EXDEV = 18
+let ENODEV = 19
+let ENOTDIR = 20
+let EISDIR = 21
+let EINVAL = 22
+let ENFILE = 23
+let EMFILE = 24
+let ENOTTY = 25
+let ETXTBSY = 26
+let EFBIG = 27
+let ENOSPC = 28
+let ESPIPE = 29
+let EROFS = 30
+let EMLINK = 31
+let EPIPE = 32
+let EDOM = 33
+let ERANGE = 34
+let EDEADLK = 35
+let EDEADLOCK = 35 // Alias of EDEADLK
+let ENAMETOOLONG = 36
+let ENOLCK = 37
+let ENOSYS = 38
+let ENOTEMPTY = 39
+let ELOOP = 40
+let ENOMSG = 42
+let EIDRM = 43
+let ECHRNG = 44
+let EL2NSYNC = 45
+let EL3HLT = 46
+let EL3RST = 47
+let ELNRNG = 48
+let EUNATCH = 49
+let ENOCSI = 50
+let EL2HLT = 51
+let EBADE = 52
+let EBADR = 53
+let EXFULL = 54
+let ENOANO = 55
+let EBADRQC = 56
+let EBADSLT = 57
+let EBFONT = 59
+let ENOSTR = 60
+let ENODATA = 61
+let ETIME = 62
+let ENOSR = 63
+let ENONET = 64
+let ENOPKG = 65
+let EREMOTE = 66
+let ENOLINK = 67
+let EADV = 68
+let ESRMNT = 69
+let ECOMM = 70
+let EPROTO = 71
+let EMULTIHOP = 72
+let EDOTDOT = 73
+let EBADMSG = 74
+let EOVERFLOW = 75
+let ENOTUNIQ = 76
+let EBADFD = 77
+let EREMCHG = 78
+let ELIBACC = 79
+let ELIBBAD = 80
+let ELIBSCN = 81
+let ELIBMAX = 82
+let ELIBEXEC = 83
+let EILSEQ = 84
+let ERESTART = 85
+let ESTRPIPE = 86
+let EUSERS = 87
+let ENOTSOCK = 88
+let EDESTADDRREQ = 89
+let EMSGSIZE = 90
+let EPROTOTYPE = 91
+let ENOPROTOOPT = 92
+let EPROTONOSUPPORT = 93
+let ESOCKTNOSUPPORT = 94
+let EOPNOTSUPP = 95
+let EPFNOSUPPORT = 96
+let EAFNOSUPPORT = 97
+let EADDRINUSE = 98
+let EADDRNOTAVAIL = 99
+let ENETDOWN = 100
+let ENETUNREACH = 101
+let ENETRESET = 102
+let ECONNABORTED = 103
+let ECONNRESET = 104
+let ENOBUFS = 105
+let EISCONN = 106
+let ENOTCONN = 107
+let ESHUTDOWN = 108
+let ETOOMANYREFS = 109
+let ETIMEDOUT = 110
+let ECONNREFUSED = 111
+let EHOSTDOWN = 112
+let EHOSTUNREACH = 113
+let EALREADY = 114
+let EINPROGRESS = 115
+let ESTALE = 116
+let EUCLEAN = 117
+let ENOTNAM = 118
+let ENAVAIL = 119
+let EISNAM = 120
+let EREMOTEIO = 121
+let EDQUOT = 122
+let ENOMEDIUM = 123
+let EMEDIUMTYPE = 124
+let ECANCELED = 125
+let ENOKEY = 126
+let EKEYEXPIRED = 127
+let EKEYREVOKED = 128
+let EKEYREJECTED = 129
+let EOWNERDEAD = 130
+let ENOTRECOVERABLE = 131
+let ERFKILL = 132
+let EHWPOISON = 133
+
+// fenv.h — Floating-Point Environment (symbols live in libm: see header)
+// NOTE: FE_DFL_ENV is a pointer macro, not a symbol: omitted.
+def feclearexcept(excepts: i32) -> i32
+def fegetexceptflag(flagp: *i32, excepts: i32) -> i32
+def feraiseexcept(excepts: i32) -> i32
+def fesetexceptflag(flagp: *i32, excepts: i32) -> i32
+def fetestexcept(excepts: i32) -> i32
+def fegetround() -> i32
+def fesetround(rounding: i32) -> i32
+def fegetenv(envp: *u0) -> i32
+def fesetenv(envp: *u0) -> i32
+def feholdexcept(envp: *u0) -> i32
+def feupdateenv(envp: *u0) -> i32
+
+let FE_DIVBYZERO = 4
+let FE_INEXACT = 32
+let FE_INVALID = 1
+let FE_OVERFLOW = 8
+let FE_UNDERFLOW = 16
+let FE_ALL_EXCEPT = 61
+let FE_TONEAREST = 0
+let FE_UPWARD = 2048
+let FE_DOWNWARD = 1024
+let FE_TOWARDZERO = 3072
+
+// inttypes.h — Greatest-Width Integers and Format Macros (LP64)
+struct Imaxdiv {
+    quot: i64
+    rem: i64
+}
+def imaxabs(x: i64) -> i64
+def imaxdiv(numer: i64, denom: i64) -> Imaxdiv
+def strtoimax(str: *u8, endptr: **u8, base: i32) -> i64
+def strtoumax(str: *u8, endptr: **u8, base: i32) -> u64
+def wcstoimax(str: *wchar_t, endptr: **wchar_t, base: i32) -> i64
+def wcstoumax(str: *wchar_t, endptr: **wchar_t, base: i32) -> u64
+// printf/scanf format macros for LP64 (usable as plain strings)
+let PRId8 = "d"
+let PRIi8 = "i"
+let PRIu8 = "u"
+let PRIx8 = "x"
+let PRId16 = "d"
+let PRIu16 = "u"
+let PRId32 = "d"
+let PRIu32 = "u"
+let PRIx32 = "x"
+let PRId64 = "ld"
+let PRIi64 = "li"
+let PRIu64 = "lu"
+let PRIx64 = "lx"
+let PRIdMAX = "ld"
+let PRIuMAX = "lu"
+let PRIdPTR = "ld"
+
+// locale.h — Localization
+struct lconv {
+    decimal_point: *u8
+    thousands_sep: *u8
+    grouping: *u8
+    int_curr_symbol: *u8
+    currency_symbol: *u8
+    mon_decimal_point: *u8
+    mon_thousands_sep: *u8
+    mon_grouping: *u8
+    positive_sign: *u8
+    negative_sign: *u8
+    int_frac_digits: u8
+    frac_digits: u8
+    p_cs_precedes: u8
+    p_sep_by_space: u8
+    n_cs_precedes: u8
+    n_sep_by_space: u8
+    p_sign_posn: u8
+    n_sign_posn: u8
+    int_p_cs_precedes: u8
+    int_p_sep_by_space: u8
+    int_n_cs_precedes: u8
+    int_n_sep_by_space: u8
+    int_p_sign_posn: u8
+    int_n_sign_posn: u8
+}
+def setlocale(category: i32, locale: *u8) -> *u8
+def localeconv() -> *lconv
+
+let LC_CTYPE = 0
+let LC_NUMERIC = 1
+let LC_TIME = 2
+let LC_COLLATE = 3
+let LC_MONETARY = 4
+let LC_MESSAGES = 5
+let LC_ALL = 6
+
+// stdio.h — Standard Input/Output
+
+// Types
+struct FILE
+struct fpos_t
+struct va_list
+
+// File Operations
+def remove(filename: *u8) -> i32
+def rename(old: *u8, new: *u8) -> i32
+def tmpfile() -> *FILE
+def tmpnam(str: *u8) -> *u8 // Deprecated: race condition risks
+
+// Opening & Closing
+def fopen(filename: *u8, mode: *u8) -> *FILE
+def freopen(filename: *u8, mode: *u8, stream: *FILE) -> *FILE
+def fclose(stream: *FILE) -> i32
+def fflush(stream: *FILE) -> i32
+// POSIX opening: file descriptors, pipes, memory streams
+def fdopen(fd: i32, mode: *u8) -> *FILE
+def popen(command: *u8, mode: *u8) -> *FILE
+def pclose(stream: *FILE) -> i32
+def fmemopen(buf: *u0, size: usize, mode: *u8) -> *FILE
+def open_memstream(bufp: **u8, sizep: *usize) -> *FILE
+def fileno(stream: *FILE) -> i32
+
+// Buffering
+def setbuf(stream: *FILE, buf: *u8)
+def setvbuf(stream: *FILE, buf: *u8, mode: i32, size: usize) -> i32
+
+// Formatted Output
+def printf(format: *u8, ...) -> i32
+def fprintf(stream: *FILE, format: *u8, ...) -> i32
+def sprintf(str: *u8, format: *u8, ...) -> i32
+def snprintf(str: *u8, n: usize, format: *u8, ...) -> i32
+// POSIX descriptor/va_list output (ap is an opaque *va_list: see header)
+def dprintf(fd: i32, format: *u8, ...) -> i32
+def vdprintf(fd: i32, format: *u8, ap: *va_list) -> i32
+def vprintf(format: *u8, ap: *va_list) -> i32
+def vfprintf(stream: *FILE, format: *u8, ap: *va_list) -> i32
+def vsprintf(str: *u8, format: *u8, ap: *va_list) -> i32
+def vsnprintf(str: *u8, n: usize, format: *u8, ap: *va_list) -> i32
+
+// Formatted Input
+def scanf(format: *u8, ...) -> i32
+def fscanf(stream: *FILE, format: *u8, ...) -> i32
+def sscanf(str: *u8, format: *u8, ...) -> i32
+def vscanf(format: *u8, ap: *va_list) -> i32
+def vfscanf(stream: *FILE, format: *u8, ap: *va_list) -> i32
+def vsscanf(str: *u8, format: *u8, ap: *va_list) -> i32
+
+// Character Input
+def fgetc(stream: *FILE) -> i32
+def fgets(str: *u8, n: i32, stream: *FILE) -> *u8
+def getchar() -> i32
+def getc(stream: *FILE) -> i32 // Macro-equivalent to fgetc()
+// POSIX line input and unlocked (thread-unsafe, faster) variants
+def getline(lineptr: **u8, n: *usize, stream: *FILE) -> i64
+def getdelim(lineptr: **u8, n: *usize, delimiter: i32, stream: *FILE) -> i64
+def getc_unlocked(stream: *FILE) -> i32
+def getchar_unlocked() -> i32
+def fgetc_unlocked(stream: *FILE) -> i32
+def fgets_unlocked(str: *u8, n: i32, stream: *FILE) -> *u8
+
+// Character Output
+def fputc(c: i32, stream: *FILE) -> i32
+def fputs(str: *u8, stream: *FILE) -> i32
+def putchar(c: i32) -> i32
+def putc(c: i32, stream: *FILE) -> i32 // Macro-equivalent to fputc()
+def puts(str: *u8) -> i32
+def putc_unlocked(c: i32, stream: *FILE) -> i32
+def putchar_unlocked(c: i32) -> i32
+def fputc_unlocked(c: i32, stream: *FILE) -> i32
+def fputs_unlocked(str: *u8, stream: *FILE) -> i32
+
+// Stream Locking (POSIX)
+def flockfile(stream: *FILE)
+def ftrylockfile(stream: *FILE) -> i32
+def funlockfile(stream: *FILE)
+
+// Character Pushback
+def ungetc(c: i32, stream: *FILE) -> i32
+
+// Block Input/Output
+def fread(ptr: *u0, size: usize, nmemb: usize, stream: *FILE) -> usize
+def fwrite(ptr: *u0, size: usize, nmemb: usize, stream: *FILE) -> usize
+def fread_unlocked(ptr: *u0, size: usize, nmemb: usize, stream: *FILE) -> usize
+def fwrite_unlocked(ptr: *u0, size: usize, nmemb: usize, stream: *FILE) -> usize
+
+// File Positioning
+def fgetpos(stream: *FILE, pos: *fpos_t) -> i32
+def fseek(stream: *FILE, offset: i64, whence: i32) -> i32
+def fsetpos(stream: *FILE, pos: *fpos_t) -> i32
+def ftell(stream: *FILE) -> i64
+def rewind(stream: *FILE)
+def fseeko(stream: *FILE, offset: i64, whence: i32) -> i32
+def ftello(stream: *FILE) -> i64
+
+// Stream Status
+def clearerr(stream: *FILE)
+def feof(stream: *FILE) -> i32
+def ferror(stream: *FILE) -> i32
+def perror(str: *u8)
+def clearerr_unlocked(stream: *FILE)
+def feof_unlocked(stream: *FILE) -> i32
+def ferror_unlocked(stream: *FILE) -> i32
+// NOTE: `gets` was removed from C11 (unsafe): deliberately omitted.
+// NOTE: stdin/stdout/stderr are macros over globals: use integer fds
+// (STDIN_FILENO et al, see unistd) or fdopen/fileno instead.
+
+// Wide-Character I/O (selected; wide orientation via fwide)
+def fwide(stream: *FILE, mode: i32) -> i32
+def fwprintf(stream: *FILE, format: *wchar_t, ...) -> i32
+def fwscanf(stream: *FILE, format: *wchar_t, ...) -> i32
+def swprintf(str: *wchar_t, n: usize, format: *wchar_t, ...) -> i32
+def fgetwc(stream: *FILE) -> i32
+def fputwc(c: i32, stream: *FILE) -> i32
+def getwc(stream: *FILE) -> i32
+def putwc(c: i32, stream: *FILE) -> i32
+def getwchar() -> i32
+def putwchar(c: i32) -> i32
+def ungetwc(c: i32, stream: *FILE) -> i32
+
+// Constants & Macros
+let _IOFBF = 0
+let _IOLBF = 1
+let _IONBF = 2
+
+let SEEK_SET = 0
+let SEEK_CUR = 1
+let SEEK_END = 2
+
+let EOF = -1
+let BUFSIZ = 8192
+let FILENAME_MAX = 4096
+let FOPEN_MAX = 16
+let TMP_MAX = 238328
+let L_tmpnam = 20
+
+// stdlib.h — General Utilities
+
+// Program Termination
+def abort() -> u0
+def exit(status: i32) -> u0
+def _Exit(status: i32) -> u0
+def atexit(function: () -> u0) -> i32
+def at_quick_exit(function: () -> u0) -> i32 // C11
+def quick_exit(status: i32) -> u0            // C11
+
+// Environment & Execution
+def getenv(name: *u8) -> *u8
+def system(command: *u8) -> i32
+// POSIX environment (environ itself is a global: omitted, see header)
+def setenv(name: *u8, value: *u8, overwrite: i32) -> i32
+def unsetenv(name: *u8) -> i32
+def putenv(string: *u8) -> i32
+def clearenv() -> i32
+
+// Memory Allocation
+def malloc(size: usize) -> *u0
+def calloc(nmemb: usize, size: usize) -> *u0 // Zero-initialized
+def realloc(ptr: *u0, size: usize) -> *u0
+def free(ptr: *u0)
+def aligned_alloc(alignment: usize, size: usize) -> *u0 // C11
+def posix_memalign(memptr: **u0, alignment: usize, size: usize) -> i32 // POSIX
+
+// Integer Conversions & Absolute Values
+def atof(str: *u8) -> f64
+def atoi(str: *u8) -> i32
+def atol(str: *u8) -> i64
+def atoll(str: *u8) -> i64
+
+def abs(x: i32) -> i32
+def labs(x: i64) -> i64
+def llabs(x: i64) -> i64
+
+// Division Results
+struct Div {
+    quot: i32
+    rem: i32
+}
+struct Ldiv {
+    quot: i64
+    rem: i64
+}
+struct Lldiv {
+    quot: i64
+    rem: i64
+}
+def div(numer: i32, denom: i32) -> Div
+def ldiv(numer: i64, denom: i64) -> Ldiv
+def lldiv(numer: i64, denom: i64) -> Lldiv
+
+// String-to-Integer Conversions
+def strtol(str: *u8, endptr: **u8, base: i32) -> i64
+def strtoul(str: *u8, endptr: **u8, base: i32) -> u64
+def strtoll(str: *u8, endptr: **u8, base: i32) -> i64
+def strtoull(str: *u8, endptr: **u8, base: i32) -> u64
+
+// Floating-Point Conversions
+def strtod(str: *u8, endptr: **u8) -> f64
+def strtof(str: *u8, endptr: **u8) -> f32
+def wcstod(str: *wchar_t, endptr: **wchar_t) -> f64
+def wcstof(str: *wchar_t, endptr: **wchar_t) -> f32
+def wcstol(str: *wchar_t, endptr: **wchar_t, base: i32) -> i64
+def wcstoul(str: *wchar_t, endptr: **wchar_t, base: i32) -> u64
+// NOTE: strtold/wcstold omitted; Blue lacks an ABI-compatible long double type.
+
+// Random Numbers
+def rand() -> i32
+def srand(seed: u32)
+let RAND_MAX = 2147483647 // Min guaranteed: 32767
+// POSIX random-number APIs
+def rand_r(seed: *u32) -> i32
+def random() -> i64
+def srandom(seed: u32)
+def initstate(seed: u32, state: *u8, n: usize) -> *u8
+def setstate(state: *u8) -> *u8
+def drand48() -> f64
+def erand48(xsubi: *u16) -> f64
+def lrand48() -> i64
+def nrand48(xsubi: *u16) -> i64
+def mrand48() -> i64
+def jrand48(xsubi: *u16) -> i64
+def srand48(seedval: i64)
+def seed48(seed16v: *u16) -> *u16
+def lcong48(param: *u16)
+
+// Searching & Sorting
+def bsearch(key: *u0, base: *u0, nmemb: usize, size: usize, comparator: (*u0, *u0) -> i32) -> *u0
+def qsort(base: *u0, nmemb: usize, size: usize, comparator: (*u0, *u0) -> i32)
+
+// Multibyte & Wide-Character Conversions
+def mblen(str: *u8, n: usize) -> i32
+def mbtowc(pwc: *wchar_t, str: *u8, n: usize) -> i32
+def wctomb(str: *u8, wchar: i32) -> i32
+def mbstowcs(dst: *wchar_t, src: *u8, len: usize) -> usize
+def wcstombs(dst: *u8, src: *wchar_t, len: usize) -> usize
+// POSIX temporary files and path resolution
+def mkstemp(template: *u8) -> i32
+def mkstemps(template: *u8, suffixlen: i32) -> i32
+def mkostemp(template: *u8, flags: i32) -> i32
+def mkdtemp(template: *u8) -> *u8
+def realpath(path: *u8, resolved: *u8) -> *u8
+def getsubopt(optionp: **u8, tokens: **u8, valuep: **u8) -> i32
+
+// Constants & Alignment
+let EXIT_SUCCESS = 0
+let EXIT_FAILURE = 1
+let EXIT_QUICK_SUCCESS = 0
+let MB_CUR_MAX = 6 // Linux UTF-8 locale; locale-dependent in general
+
+// string.h — String and Memory Operations
+
+// Memory Operations
+def memcpy(dest: *u0, src: *u0, n: usize) -> *u0
+def memmove(dest: *u0, src: *u0, n: usize) -> *u0
+def memset(s: *u0, c: i32, n: usize) -> *u0
+def memcmp(s1: *u0, s2: *u0, n: usize) -> i32
+def memchr(s: *u0, c: i32, n: usize) -> *u0
+// NOTE: memset_s (Annex K) is not implemented by glibc: omitted.
+
+// String Operations
+def strlen(s: *u8) -> usize
+def strcmp(s1: *u8, s2: *u8) -> i32
+def strncmp(s1: *u8, s2: *u8, n: usize) -> i32
+def strcpy(dest: *u8, src: *u8) -> *u8
+def strncpy(dest: *u8, src: *u8, n: usize) -> *u8
+def strcat(dest: *u8, src: *u8) -> *u8
+def strncat(dest: *u8, src: *u8, n: usize) -> *u8
+def strchr(s: *u8, c: i32) -> *u8
+def strrchr(s: *u8, c: i32) -> *u8
+def strstr(haystack: *u8, needle: *u8) -> *u8
+def strpbrk(s: *u8, accept: *u8) -> *u8
+def strspn(s: *u8, accept: *u8) -> usize
+def strcspn(s: *u8, reject: *u8) -> usize
+def strtok(str: *u8, delim: *u8) -> *u8
+def strcoll(s1: *u8, s2: *u8) -> i32
+def strxfrm(dest: *u8, src: *u8, n: usize) -> usize
+def strerror(errnum: i32) -> *u8
+// NOTE: strerror_r has two ABIs. glibc defaults to the GNU variant
+// (returns *u8); the XSI variant below is the stable-signature one.
+def __xpg_strerror_r(errnum: i32, buf: *u8, buflen: usize) -> i32
+
+// POSIX / GNU string extensions (NOT ISO C: keep classified as such)
+def strdup(s: *u8) -> *u8
+def strndup(s: *u8, n: usize) -> *u8
+def strnlen(s: *u8, maxlen: usize) -> usize
+def strtok_r(str: *u8, delim: *u8, saveptr: **u8) -> *u8
+def strsep(stringp: **u8, delim: *u8) -> *u8
+def memmem(haystack: *u0, haystacklen: usize, needle: *u0, needlelen: usize) -> *u0
+def strchrnul(s: *u8, c: i32) -> *u8
+
+// strings.h — Case-Insensitive Compare and Bit Search (POSIX)
+def strcasecmp(s1: *u8, s2: *u8) -> i32
+def strncasecmp(s1: *u8, s2: *u8, n: usize) -> i32
+def ffs(x: i32) -> i32
+def ffsl(x: i64) -> i32
+def ffsll(x: i64) -> i32
+
+// math.h — Mathematical Functions (symbols live in libm: see header)
+// Classification macros isfinite/signbit/fpclassify have no symbols and
+// are omitted; isnan/isinf below ARE real (weak) libc symbols. The M_*
+// constants below are plain doubles, safe as `let` bindings.
+
+// Trigonometric & Hyperbolic
+def sin(x: f64) -> f64
+def cos(x: f64) -> f64
+def tan(x: f64) -> f64
+def asin(x: f64) -> f64
+def acos(x: f64) -> f64
+def atan(x: f64) -> f64
+def atan2(y: f64, x: f64) -> f64
+
+def sinh(x: f64) -> f64
+def cosh(x: f64) -> f64
+def tanh(x: f64) -> f64
+def asinh(x: f64) -> f64
+def acosh(x: f64) -> f64
+def atanh(x: f64) -> f64
+
+// Exponential, Logarithmic & Power
+def exp(x: f64) -> f64
+def exp2(x: f64) -> f64
+def expm1(x: f64) -> f64
+def log(x: f64) -> f64
+def log10(x: f64) -> f64
+def log2(x: f64) -> f64
+def log1p(x: f64) -> f64
+def pow(x: f64, y: f64) -> f64
+def sqrt(x: f64) -> f64
+def cbrt(x: f64) -> f64
+def hypot(x: f64, y: f64) -> f64
+
+// Rounding
+def ceil(x: f64) -> f64
+def floor(x: f64) -> f64
+def trunc(x: f64) -> f64
+def round(x: f64) -> f64
+def lround(x: f64) -> i64
+def llround(x: f64) -> i64
+def nearbyint(x: f64) -> f64
+def rint(x: f64) -> f64
+def lrint(x: f64) -> i64
+def llrint(x: f64) -> i64
+
+// Nearest Integer, Absolute Value & Remainder
+def fabs(x: f64) -> f64
+def fmod(x: f64, y: f64) -> f64
+def remainder(x: f64, y: f64) -> f64
+def remquo(x: f64, y: f64, quo: *i32) -> f64
+
+// Min, Max & Positive Difference
+def fmin(x: f64, y: f64) -> f64
+def fmax(x: f64, y: f64) -> f64
+def fdim(x: f64, y: f64) -> f64
+def copysign(x: f64, y: f64) -> f64
+
+// Error & Gamma Functions
+def erf(x: f64) -> f64
+def erfc(x: f64) -> f64
+def tgamma(x: f64) -> f64
+def lgamma(x: f64) -> f64
+def lgamma_r(x: f64, signgamp: *i32) -> f64
+
+// Fused Multiply-Add & Next Representable Value
+def fma(x: f64, y: f64, z: f64) -> f64
+def nextafter(x: f64, y: f64) -> f64
+
+// NaN Construction (returns quiet NaN; tag may be nil)
+def nan(tag: *u8) -> f64
+
+// Floating-Point Decomposition
+def frexp(value: f64, exp: *i32) -> f64
+def ldexp(x: f64, exp: i32) -> f64
+def modf(x: f64, iptr: *f64) -> f64
+def ilogb(x: f64) -> i32
+def logb(x: f64) -> f64
+def scalbn(x: f64, n: i32) -> f64
+def scalbln(x: f64, n: i64) -> f64
+
+// Classification (real symbols; macro spellings delegate to these)
+def isnan(x: f64) -> i32
+def isinf(x: f64) -> i32
+
+// Single-Precision (f32) Variants
+def sinf(x: f32) -> f32
+def cosf(x: f32) -> f32
+def tanf(x: f32) -> f32
+def asinf(x: f32) -> f32
+def acosf(x: f32) -> f32
+def atanf(x: f32) -> f32
+def atan2f(y: f32, x: f32) -> f32
+def sinhf(x: f32) -> f32
+def coshf(x: f32) -> f32
+def tanhf(x: f32) -> f32
+def asinhf(x: f32) -> f32
+def acoshf(x: f32) -> f32
+def atanhf(x: f32) -> f32
+def expf(x: f32) -> f32
+def exp2f(x: f32) -> f32
+def expm1f(x: f32) -> f32
+def logf(x: f32) -> f32
+def log10f(x: f32) -> f32
+def log2f(x: f32) -> f32
+def log1pf(x: f32) -> f32
+def powf(x: f32, y: f32) -> f32
+def sqrtf(x: f32) -> f32
+def cbrtf(x: f32) -> f32
+def hypotf(x: f32, y: f32) -> f32
+def ceilf(x: f32) -> f32
+def floorf(x: f32) -> f32
+def truncf(x: f32) -> f32
+def roundf(x: f32) -> f32
+def lroundf(x: f32) -> i64
+def llroundf(x: f32) -> i64
+def nearbyintf(x: f32) -> f32
+def rintf(x: f32) -> f32
+def lrintf(x: f32) -> i64
+def llrintf(x: f32) -> i64
+def fabsf(x: f32) -> f32
+def fmodf(x: f32, y: f32) -> f32
+def remainderf(x: f32, y: f32) -> f32
+def remquof(x: f32, y: f32, quo: *i32) -> f32
+def fminf(x: f32, y: f32) -> f32
+def fmaxf(x: f32, y: f32) -> f32
+def fdimf(x: f32, y: f32) -> f32
+def copysignf(x: f32, y: f32) -> f32
+def erff(x: f32) -> f32
+def erfcf(x: f32) -> f32
+def tgammaf(x: f32) -> f32
+def lgammaf(x: f32) -> f32
+def nanf(tag: *u8) -> f32
+def frexpf(value: f32, exp: *i32) -> f32
+def ldexpf(x: f32, exp: i32) -> f32
+def modff(x: f32, iptr: *f32) -> f32
+def ilogbf(x: f32) -> i32
+def logbf(x: f32) -> f32
+def scalbnf(x: f32, n: i32) -> f32
+// NOTE: *l (long double) variants omitted (no Blue ABI type).
+
+// BSD/GNU Math Constants (plain doubles)
+let M_E = 2.71828182845904523536
+let M_LOG2E = 1.44269504088896340736
+let M_LOG10E = 0.43429448190325182765
+let M_LN2 = 0.69314718055994530942
+let M_LN10 = 2.30258509299404568402
+let M_PI = 3.14159265358979323846
+let M_PI_2 = 1.57079632679489661923
+let M_PI_4 = 0.78539816339744830962
+let M_1_PI = 0.31830988618379067154
+let M_2_PI = 0.63661977236758134308
+let M_2_SQRTPI = 1.12837916709551257390
+let M_SQRT2 = 1.41421356237309504880
+let M_SQRT1_2 = 0.70710678118654752440
+
+// setjmp.h — Non-Local Jumps
+// jmp_buf holds the 8 callee-saved registers on x86_64; plain setjmp
+// does not touch the signal mask, so the trailing sigjmp fields live in
+// sigjmp_buf only.
+struct jmp_buf {
+    val: [8]i64
+}
+struct sigjmp_buf {
+    val: [8]i64
+    saved: i32
+    mask: [16]u64
+}
+def setjmp(env: *jmp_buf) -> i32
+def longjmp(env: *jmp_buf, val: i32) -> u0
+def sigsetjmp(env: *sigjmp_buf, savesigs: i32) -> i32
+def siglongjmp(env: *sigjmp_buf, val: i32) -> u0
+
+// signal.h — Signal Handling (ISO part; POSIX extensions in Part 2)
+// NOTE: SIG_DFL is the null handler: pass nil. SIG_IGN/SIG_ERR are the
+// addresses 1 and -1, which Blue cannot currently spell as function
+// values; use sigaction with an empty mask instead, or the POSIX helpers.
+using sighandler_t (i32) -> u0
+def signal(sig: i32, handler: sighandler_t) -> sighandler_t
+def raise(sig: i32) -> i32
+// Signal numbers (Linux x86_64)
+let SIGHUP = 1
+let SIGINT = 2
+let SIGQUIT = 3
+let SIGILL = 4
+let SIGTRAP = 5
+let SIGABRT = 6
+let SIGIOT = 6 // Alias of SIGABRT
+let SIGBUS = 7
+let SIGFPE = 8
+let SIGKILL = 9
+let SIGUSR1 = 10
+let SIGSEGV = 11
+let SIGUSR2 = 12
+let SIGPIPE = 13
+let SIGALRM = 14
+let SIGTERM = 15
+let SIGSTKFLT = 16
+let SIGCHLD = 17
+let SIGCONT = 18
+let SIGSTOP = 19
+let SIGTSTP = 20
+let SIGTTIN = 21
+let SIGTTOU = 22
+let SIGURG = 23
+let SIGXCPU = 24
+let SIGXFSZ = 25
+let SIGVTALRM = 26
+let SIGPROF = 27
+let SIGWINCH = 28
+let SIGIO = 29
+let SIGPOLL = 29 // Alias of SIGIO
+let SIGPWR = 30
+let SIGSYS = 31
+let SIGRTMIN = 32
+
+// stdarg.h — Variable Arguments
+// va_start/va_arg/va_copy/va_end are compiler macros with no symbols and
+// cannot be declared. *va_list below only types the receiving side of
+// the v*printf/v*scanf family (see stdio).
+
+// time.h — Time and Date Utilities
+
+// Types
+using clock_t u64
+using time_t i64 // Platform-dependent in C; i64 assumed for fixed Blue ABI
+using clockid_t i32
+struct tm {
+    tm_sec: i32
+    tm_min: i32
+    tm_hour: i32
+    tm_mday: i32
+    tm_mon: i32
+    tm_year: i32
+    tm_wday: i32
+    tm_yday: i32
+    tm_isdst: i32
+    tm_gmtoff: i64
+    tm_zone: *u8
+}
+struct timespec {
+    tv_sec: i64
+    tv_nsec: i64
+}
+struct timeval {
+    tv_sec: i64
+    tv_usec: i64
+}
+
+// Broken-down Time
+def asctime(tm: *tm) -> *u8
+def ctime(timer: *time_t) -> *u8
+def gmtime(timer: *time_t) -> *tm
+def localtime(timer: *time_t) -> *tm
+def mktime(tm: *tm) -> time_t
+// Reentrant (POSIX) variants write into caller-provided storage
+def asctime_r(tm: *tm, buf: *u8) -> *u8
+def ctime_r(timer: *time_t, buf: *u8) -> *u8
+def gmtime_r(timer: *time_t, result: *tm) -> *tm
+def localtime_r(timer: *time_t, result: *tm) -> *tm
+
+// Time Formatting
+def strftime(str: *u8, max: usize, format: *u8, tm: *tm) -> usize
+def strptime(str: *u8, format: *u8, tm: *tm) -> *u8 // POSIX
+
+// Time Values
+def time(timer: *time_t) -> time_t
+def difftime(time1: time_t, time0: time_t) -> f64
+def clock() -> clock_t
+
+// C11 Timespec Functions
+def timespec_get(ts: *timespec, base: i32) -> i32
+// POSIX high-resolution clocks and sleeping
+def clock_gettime(clk: clockid_t, ts: *timespec) -> i32
+def clock_getres(clk: clockid_t, ts: *timespec) -> i32
+def clock_nanosleep(clk: clockid_t, flags: i32, req: *timespec, rem: *timespec) -> i32
+def nanosleep(req: *timespec, rem: *timespec) -> i32
+def tzset()
+// NOTE: daylight/timezone/tzname are globals: omitted (see header).
+
+let CLOCKS_PER_SEC = 1000000
+let TIME_UTC = 1
+let CLOCK_REALTIME = 0
+let CLOCK_MONOTONIC = 1
+let CLOCK_PROCESS_CPUTIME_ID = 2
+let CLOCK_THREAD_CPUTIME_ID = 3
+let CLOCK_MONOTONIC_RAW = 4
+let CLOCK_REALTIME_COARSE = 5
+let CLOCK_MONOTONIC_COARSE = 6
+let CLOCK_BOOTTIME = 7
+let TIMER_ABSTIME = 1
+
+// uchar.h — UTF-16/32 Restartable Conversion (C11)
+using char16_t u16
+using char32_t u32
+struct mbstate_t {
+    raw: [8]u8
+}
+def mbrtoc16(pc: *u16, s: *u8, n: usize, ps: *mbstate_t) -> usize
+def c16rtomb(s: *u8, c: u16, ps: *mbstate_t) -> usize
+def mbrtoc32(pc: *u32, s: *u8, n: usize, ps: *mbstate_t) -> usize
+def c32rtomb(s: *u8, c: u32, ps: *mbstate_t) -> usize
+
+// wchar.h — Wide-Character Utilities
+using wint_t u32
+def wcscpy(dest: *wchar_t, src: *wchar_t) -> *wchar_t
+def wcsncpy(dest: *wchar_t, src: *wchar_t, n: usize) -> *wchar_t
+def wcscat(dest: *wchar_t, src: *wchar_t) -> *wchar_t
+def wcsncat(dest: *wchar_t, src: *wchar_t, n: usize) -> *wchar_t
+def wcslen(s: *wchar_t) -> usize
+def wcsnlen(s: *wchar_t, maxlen: usize) -> usize
+def wcscmp(s1: *wchar_t, s2: *wchar_t) -> i32
+def wcsncmp(s1: *wchar_t, s2: *wchar_t, n: usize) -> i32
+def wcschr(s: *wchar_t, c: i32) -> *wchar_t
+def wcsrchr(s: *wchar_t, c: i32) -> *wchar_t
+def wcsstr(haystack: *wchar_t, needle: *wchar_t) -> *wchar_t
+def wcspbrk(s: *wchar_t, accept: *wchar_t) -> *wchar_t
+def wcsspn(s: *wchar_t, accept: *wchar_t) -> usize
+def wcscspn(s: *wchar_t, reject: *wchar_t) -> usize
+def wcstok(str: *wchar_t, delim: *wchar_t, saveptr: **wchar_t) -> *wchar_t
+def wcscoll(s1: *wchar_t, s2: *wchar_t) -> i32
+def wcsxfrm(dest: *wchar_t, src: *wchar_t, n: usize) -> usize
+def wcsdup(s: *wchar_t) -> *wchar_t // POSIX
+def wmemcpy(dest: *wchar_t, src: *wchar_t, n: usize) -> *wchar_t
+def wmemmove(dest: *wchar_t, src: *wchar_t, n: usize) -> *wchar_t
+def wmemset(s: *wchar_t, c: i32, n: usize) -> *wchar_t
+def wmemcmp(s1: *wchar_t, s2: *wchar_t, n: usize) -> i32
+def wmemchr(s: *wchar_t, c: i32, n: usize) -> *wchar_t
+def btowc(c: i32) -> i32
+def wctob(c: i32) -> i32
+def mbsinit(ps: *mbstate_t) -> i32
+def mbrlen(s: *u8, n: usize, ps: *mbstate_t) -> usize
+def mbrtowc(pwc: *wchar_t, s: *u8, n: usize, ps: *mbstate_t) -> usize
+def wcrtomb(s: *u8, wc: i32, ps: *mbstate_t) -> usize
+def mbsrtowcs(dst: *wchar_t, src: **u8, len: usize, ps: *mbstate_t) -> usize
+def wcsrtombs(dst: *u8, src: **wchar_t, len: usize, ps: *mbstate_t) -> usize
+let WEOF = -1
+
+// wctype.h — Wide-Character Classification
+def iswalnum(wc: i32) -> i32
+def iswalpha(wc: i32) -> i32
+def iswblank(wc: i32) -> i32
+def iswcntrl(wc: i32) -> i32
+def iswdigit(wc: i32) -> i32
+def iswgraph(wc: i32) -> i32
+def iswlower(wc: i32) -> i32
+def iswprint(wc: i32) -> i32
+def iswpunct(wc: i32) -> i32
+def iswspace(wc: i32) -> i32
+def iswupper(wc: i32) -> i32
+def iswxdigit(wc: i32) -> i32
+def towlower(wc: i32) -> i32
+def towupper(wc: i32) -> i32
+def iswctype(wc: i32, desc: u64) -> i32
+def towctrans(wc: i32, desc: u64) -> i32
+
+// complex.h / tgmath.h / stdatomic.h / threads.h — Not Represented
+//   C11 complex numbers, type-generic math, _Atomic and threads.h
+//   (thrd_*, mtx_*, cnd_*, tss_*) need compiler support; glibc does not
+//   provide threads.h. None are declared here. Use Part 2 (pthreads)
+//   for threading.
+
+
+// ============================================================
+// PART 2 — POSIX AND WIDELY-AVAILABLE EXTENSIONS
+// (kept separate from ISO C11; values marked Linux are x86_64 ABI)
+// ============================================================
+
+// sys/types.h — POSIX Type Aliases (LP64)
+using pid_t i32
+using uid_t u32
+using gid_t u32
+using mode_t u32
+using off_t i64
+using dev_t u64
+using ino_t u64
+using nlink_t u64
+using blksize_t i64
+using blkcnt_t i64
+using ssize_t i64
+using id_t u32
+using useconds_t u32
+using suseconds_t i64
+using socklen_t u32
+using nfds_t u64
+
+// unistd.h — POSIX Standard & Extended Extensions
+
+// Sleep Utilities
+def sleep(seconds: u32) -> u32 // Returns unslept seconds
+def usleep(usec: u32) -> i32   // Returns 0 on success, -1 on error
+
+// File Descriptor I/O
+def read(fd: i32, buf: *u0, count: usize) -> i64
+def write(fd: i32, buf: *u0, count: usize) -> i64
+def close(fd: i32) -> i32
+def lseek(fd: i32, offset: i64, whence: i32) -> i64
+def pread(fd: i32, buf: *u0, count: usize, offset: i64) -> i64
+def pwrite(fd: i32, buf: *u0, count: usize, offset: i64) -> i64
+def fsync(fd: i32) -> i32
+def fdatasync(fd: i32) -> i32
+def ftruncate(fd: i32, length: i64) -> i32
+def truncate(path: *u8, length: i64) -> i32
+
+// Pipe & Process Control
+def pipe(pipefd: *i32) -> i32
+def pipe2(pipefd: *i32, flags: i32) -> i32
+def fork() -> i32
+def execve(pathname: *u8, argv: **u8, envp: **u8) -> i32
+def execv(path: *u8, argv: **u8) -> i32
+def execvp(file: *u8, argv: **u8) -> i32
+def execl(path: *u8, arg: *u8, ...) -> i32
+def fexecve(fd: i32, argv: **u8, envp: **u8) -> i32
+def _exit(status: i32) -> u0
+def daemon(nochdir: i32, noclose: i32) -> i32
+
+// Environment & User IDs
+def getpid() -> i32
+def getppid() -> i32
+def getuid() -> i32
+def geteuid() -> i32
+def getgid() -> i32
+def getegid() -> i32
+def setuid(uid: u32) -> i32
+def setgid(gid: u32) -> i32
+def seteuid(uid: u32) -> i32
+def setegid(gid: u32) -> i32
+def getpgrp() -> i32
+def getpgid(pid: i32) -> i32
+def setpgid(pid: i32, pgid: i32) -> i32
+def setsid() -> i32
+
+// Working Directory & Path Queries
+def getcwd(buf: *u8, size: usize) -> *u8
+def chdir(path: *u8) -> i32
+def fchdir(fd: i32) -> i32
+def gethostname(name: *u8, len: usize) -> i32
+def sethostname(name: *u8, len: usize) -> i32
+def getlogin() -> *u8
+
+// File Tests & Links
+def access(path: *u8, mode: i32) -> i32
+def faccessat(dirfd: i32, path: *u8, mode: i32, flags: i32) -> i32
+def dup(oldfd: i32) -> i32
+def dup2(oldfd: i32, newfd: i32) -> i32
+def dup3(oldfd: i32, newfd: i32, flags: i32) -> i32
+def link(oldpath: *u8, newpath: *u8) -> i32
+def symlink(target: *u8, linkpath: *u8) -> i32
+def readlink(path: *u8, buf: *u8, bufsiz: usize) -> i64
+def unlink(path: *u8) -> i32
+def rmdir(path: *u8) -> i32
+def chown(path: *u8, owner: u32, group: u32) -> i32
+
+// Terminal & Misc
+def isatty(fd: i32) -> i32
+def ttyname(fd: i32) -> *u8
+def ttyname_r(fd: i32, buf: *u8, buflen: usize) -> i32
+def alarm(seconds: u32) -> u32
+def pause() -> i32
+def nice(inc: i32) -> i32
+def sync()
+def getpagesize() -> i32
+def getentropy(buf: *u0, buflen: usize) -> i32
+def swab(from: *u0, to: *u0, n: i64)
+// NOTE: getopt's globals (optarg/optind/opterr/optopt) are C globals and
+// cannot be imported (see header); the parser itself is declared.
+def getopt(argc: i32, argv: **u8, optstring: *u8) -> i32
+
+// System Configuration
+def sysconf(name: i32) -> i64
+def pathconf(path: *u8, name: i32) -> i64
+def fpathconf(fd: i32, name: i32) -> i64
+def confstr(name: i32, buf: *u8, len: usize) -> usize
+
+// Standard File Descriptors
+let STDIN_FILENO = 0
+let STDOUT_FILENO = 1
+let STDERR_FILENO = 2
+
+// Access Modes
+let F_OK = 0
+let X_OK = 1
+let W_OK = 2
+let R_OK = 4
+
+// sysconf/pathconf Names (Linux; frequently used subset)
+let _SC_CLK_TCK = 2
+let _SC_OPEN_MAX = 4
+let _SC_PAGESIZE = 30
+let _SC_PAGE_SIZE = 30
+let _SC_NPROCESSORS_ONLN = 84
+let _PC_PATH_MAX = 4
+let _PC_NAME_MAX = 3
+
+// fcntl.h — File Control (flag values: Linux x86_64)
+def open(path: *u8, flags: i32, ...) -> i32
+def creat(path: *u8, mode: u32) -> i32
+def fcntl(fd: i32, cmd: i32, ...) -> i32
+
+let O_ACCMODE = 3
+let O_RDONLY = 0
+let O_WRONLY = 1
+let O_RDWR = 2
+let O_CREAT = 64
+let O_EXCL = 128
+let O_NOCTTY = 256
+let O_TRUNC = 512
+let O_APPEND = 1024
+let O_NONBLOCK = 2048
+let O_DSYNC = 4096
+let O_ASYNC = 8192
+let O_DIRECT = 16384
+let O_LARGEFILE = 0 // x86_64: 64-bit offsets are implicit
+let O_DIRECTORY = 65536
+let O_NOFOLLOW = 131072
+let O_NOATIME = 262144
+let O_CLOEXEC = 524288
+let O_SYNC = 1052672
+let O_PATH = 2097152
+let O_TMPFILE = 4259840
+let F_DUPFD = 0
+let F_GETFD = 1
+let F_SETFD = 2
+let F_GETFL = 3
+let F_SETFL = 4
+let F_GETLK = 5
+let F_SETLK = 6
+let F_SETLKW = 7
+let F_SETOWN = 8
+let F_GETOWN = 9
+let FD_CLOEXEC = 1
+let AT_FDCWD = -100
+let AT_SYMLINK_NOFOLLOW = 256
+let AT_REMOVEDIR = 512
+let AT_SYMLINK_FOLLOW = 1024
+let AT_EMPTY_PATH = 4096
+
+// dirent.h — Directory Entries (Linux x86_64 layout)
+struct DIR
+struct dirent {
+    ino: u64
+    off: i64
+    reclen: u16
+    dtype: u8
+    name: [256]u8
+}
+def opendir(path: *u8) -> *DIR
+def readdir(dir: *DIR) -> *dirent
+def closedir(dir: *DIR) -> i32
+def rewinddir(dir: *DIR)
+def seekdir(dir: *DIR, loc: i64)
+def telldir(dir: *DIR) -> i64
+def dirfd(dir: *DIR) -> i32
+
+let DT_UNKNOWN = 0
+let DT_FIFO = 1
+let DT_CHR = 2
+let DT_DIR = 4
+let DT_BLK = 6
+let DT_REG = 8
+let DT_LNK = 10
+let DT_SOCK = 12
+
+// sys/stat.h — File Status (Linux x86_64 layout, flattened)
+// NOTE: Blue keeps types and functions in one namespace, so the C struct
+// `stat`/`sigaction`/`div_t` family is spelled `Stat`/`Sigaction`/
+// `Div`/`Ldiv`/`Lldiv`/`Imaxdiv` while the functions keep C names.
+struct Stat {
+    dev: u64
+    ino: u64
+    nlink: u64
+    mode: u32
+    uid: u32
+    gid: u32
+    pad0: i32
+    rdev: u64
+    size: i64
+    blksize: i64
+    blocks: i64
+    atime_sec: i64
+    atime_nsec: i64
+    mtime_sec: i64
+    mtime_nsec: i64
+    ctime_sec: i64
+    ctime_nsec: i64
+    unused: [3]i64
+}
+def stat(path: *u8, buf: *Stat) -> i32
+def fstat(fd: i32, buf: *Stat) -> i32
+def lstat(path: *u8, buf: *Stat) -> i32
+def fstatat(dirfd: i32, path: *u8, buf: *Stat, flags: i32) -> i32
+def mkdir(path: *u8, mode: u32) -> i32
+def mkfifo(path: *u8, mode: u32) -> i32
+def mknod(path: *u8, mode: u32, dev: u64) -> i32
+def chmod(path: *u8, mode: u32) -> i32
+def fchmod(fd: i32, mode: u32) -> i32
+def umask(mask: u32) -> u32
+// NOTE: S_ISREG/S_ISDIR/... are bitmask macros; Blue has no bitwise
+// operators, so compare (mode & S_IFMT) idioms are unavailable. The raw
+// S_IFMT file-type and permission constants are declared.
+let S_IFMT = 61440
+let S_IFSOCK = 49152
+let S_IFLNK = 40960
+let S_IFREG = 32768
+let S_IFBLK = 24576
+let S_IFDIR = 16384
+let S_IFCHR = 8192
+let S_IFIFO = 4096
+let S_ISUID = 2048
+let S_ISGID = 1024
+let S_ISVTX = 512
+let S_IRUSR = 256
+let S_IWUSR = 128
+let S_IXUSR = 64
+let S_IRGRP = 32
+let S_IWGRP = 16
+let S_IXGRP = 8
+let S_IROTH = 4
+let S_IWOTH = 2
+let S_IXOTH = 1
+
+// sys/mman.h — Memory Mapping (values: Linux x86_64)
+// NOTE: MAP_FAILED is (void *)-1. Spell the check as
+// `(ptr as i64) == -1`; no `let` can carry a pointer value here.
+def mmap(addr: *u0, len: usize, prot: i32, flags: i32, fd: i32, offset: i64) -> *u0
+def munmap(addr: *u0, len: usize) -> i32
+def mprotect(addr: *u0, len: usize, prot: i32) -> i32
+def msync(addr: *u0, len: usize, flags: i32) -> i32
+def madvise(addr: *u0, len: usize, advice: i32) -> i32
+def mlock(addr: *u0, len: usize) -> i32
+def munlock(addr: *u0, len: usize) -> i32
+
+let PROT_NONE = 0
+let PROT_READ = 1
+let PROT_WRITE = 2
+let PROT_EXEC = 4
+let MAP_SHARED = 1
+let MAP_PRIVATE = 2
+let MAP_FIXED = 16
+let MAP_ANONYMOUS = 32
+let MS_ASYNC = 1
+let MS_SYNC = 4
+let MS_INVALIDATE = 2
+let MADV_NORMAL = 0
+let MADV_DONTNEED = 4
+
+// sys/time.h — Time from the System Clock
+def gettimeofday(tp: *timeval, tzp: *u0) -> i32 // tzp obsolete: pass nil
+struct itimerval {
+    interval_sec: i64
+    interval_usec: i64
+    value_sec: i64
+    value_usec: i64
+}
+def getitimer(which: i32, curr: *itimerval) -> i32
+def setitimer(which: i32, newval: *itimerval, oldval: *itimerval) -> i32
+let ITIMER_REAL = 0
+let ITIMER_VIRTUAL = 1
+let ITIMER_PROF = 2
+
+// sys/wait.h — Wait for Child Processes
+def wait(status: *i32) -> i32
+def waitpid(pid: i32, status: *i32, options: i32) -> i32
+// NOTE: WIFEXITED/WEXITSTATUS/... are bit-manipulation macros and cannot
+// be expressed (no bitwise operators). Raw option/status constants:
+let WNOHANG = 1
+let WUNTRACED = 2
+let WCONTINUED = 8
+
+// poll.h — Synchronous I/O Multiplexing
+struct pollfd {
+    fd: i32
+    events: i16
+    revents: i16
+}
+def poll(fds: *pollfd, nfds: u64, timeout: i32) -> i32
+let POLLIN = 1
+let POLLPRI = 2
+let POLLOUT = 4
+let POLLERR = 8
+let POLLHUP = 16
+let POLLNVAL = 32
+let POLLRDHUP = 8192
+
+// sys/select.h — More I/O Multiplexing
+// fd_set is a 1024-bit mask; FD_SET/FD_ISSET/... are bit macros without
+// symbols, so selection sets cannot be built from Blue today. The call
+// itself is declared for completeness.
+struct fd_set {
+    bits: [16]u64
+}
+struct sigset_t {
+    val: [16]u64
+}
+def select(nfds: i32, readfds: *fd_set, writefds: *fd_set, exceptfds: *fd_set, timeout: *timeval) -> i32
+def pselect(nfds: i32, readfds: *fd_set, writefds: *fd_set, exceptfds: *fd_set, timeout: *timespec, sigmask: *sigset_t) -> i32
+
+// signal.h — POSIX Signal Extensions
+def kill(pid: i32, sig: i32) -> i32
+def sigaction(sig: i32, act: *Sigaction, oldact: *Sigaction) -> i32
+struct Sigaction {
+    handler: sighandler_t
+    mask: [16]u64
+    flags: i32
+    restorer: *u0
+}
+def sigemptyset(set: *sigset_t) -> i32
+def sigfillset(set: *sigset_t) -> i32
+def sigaddset(set: *sigset_t, signo: i32) -> i32
+def sigdelset(set: *sigset_t, signo: i32) -> i32
+def sigismember(set: *sigset_t, signo: i32) -> i32
+def sigprocmask(how: i32, set: *sigset_t, oldset: *sigset_t) -> i32
+def sigpending(set: *sigset_t) -> i32
+def sigsuspend(mask: *sigset_t) -> i32
+def psignal(sig: i32, s: *u8)
+let SIG_BLOCK = 0
+let SIG_UNBLOCK = 1
+let SIG_SETMASK = 2
+let SA_NOCLDSTOP = 1
+let SA_NOCLDWAIT = 2
+let SA_SIGINFO = 4
+let SA_ONSTACK = 134217728
+let SA_RESTART = 268435456
+let SA_NODEFER = 1073741824
+let SA_RESETHAND = 2147483648
+
+// sched.h — Execution Scheduling
+struct sched_param {
+    priority: i32
+}
+def sched_yield() -> i32
+def sched_get_priority_max(policy: i32) -> i32
+def sched_get_priority_min(policy: i32) -> i32
+def sched_getscheduler(pid: i32) -> i32
+def sched_setscheduler(pid: i32, policy: i32, param: *sched_param) -> i32
+def sched_getparam(pid: i32, param: *sched_param) -> i32
+def sched_setparam(pid: i32, param: *sched_param) -> i32
+let SCHED_OTHER = 0
+let SCHED_FIFO = 1
+let SCHED_RR = 2
+
+// pthread.h — Threads (opaque where the layout is arch-private)
+// Static initializers (PTHREAD_MUTEX_INITIALIZER, ...) are C macros over
+// those private layouts: always initialise with pthread_*_init instead.
+using pthread_t u64
+using pthread_key_t u32
+using pthread_once_t i32
+using pthread_spinlock_t i32
+// Opaque in C, but fixed-size on Linux x86_64, so spelled as raw storage:
+// stack allocation (`var m: pthread_mutex_t`) works, field access is
+// meaningless by design.
+struct pthread_attr_t {
+    raw: [56]u8
+}
+struct pthread_mutex_t {
+    raw: [40]u8
+}
+struct pthread_mutexattr_t {
+    raw: [4]u8
+}
+struct pthread_cond_t {
+    raw: [48]u8
+}
+struct pthread_condattr_t {
+    raw: [4]u8
+}
+struct pthread_rwlock_t {
+    raw: [56]u8
+}
+struct pthread_rwlockattr_t {
+    raw: [8]u8
+}
+def pthread_create(thread: *pthread_t, attr: *pthread_attr_t, start: (*u0) -> *u0, arg: *u0) -> i32
+def pthread_join(thread: pthread_t, retval: **u0) -> i32
+def pthread_detach(thread: pthread_t) -> i32
+def pthread_exit(retval: *u0) -> u0
+def pthread_self() -> pthread_t
+def pthread_equal(t1: pthread_t, t2: pthread_t) -> i32
+def pthread_cancel(thread: pthread_t) -> i32
+def pthread_once(control: *pthread_once_t, init: () -> u0) -> i32
+def pthread_key_create(key: *pthread_key_t, destructor: (*u0) -> u0) -> i32
+def pthread_key_delete(key: pthread_key_t) -> i32
+def pthread_setspecific(key: pthread_key_t, value: *u0) -> i32
+def pthread_getspecific(key: pthread_key_t) -> *u0
+def pthread_mutex_init(mutex: *pthread_mutex_t, attr: *pthread_mutexattr_t) -> i32
+def pthread_mutex_destroy(mutex: *pthread_mutex_t) -> i32
+def pthread_mutex_lock(mutex: *pthread_mutex_t) -> i32
+def pthread_mutex_trylock(mutex: *pthread_mutex_t) -> i32
+def pthread_mutex_unlock(mutex: *pthread_mutex_t) -> i32
+def pthread_cond_init(cond: *pthread_cond_t, attr: *pthread_condattr_t) -> i32
+def pthread_cond_destroy(cond: *pthread_cond_t) -> i32
+def pthread_cond_wait(cond: *pthread_cond_t, mutex: *pthread_mutex_t) -> i32
+def pthread_cond_signal(cond: *pthread_cond_t) -> i32
+def pthread_cond_broadcast(cond: *pthread_cond_t) -> i32
+def pthread_rwlock_init(lock: *pthread_rwlock_t, attr: *pthread_rwlockattr_t) -> i32
+def pthread_rwlock_destroy(lock: *pthread_rwlock_t) -> i32
+def pthread_rwlock_rdlock(lock: *pthread_rwlock_t) -> i32
+def pthread_rwlock_wrlock(lock: *pthread_rwlock_t) -> i32
+def pthread_rwlock_unlock(lock: *pthread_rwlock_t) -> i32
+def pthread_spin_init(lock: *pthread_spinlock_t, pshared: i32) -> i32
+def pthread_spin_destroy(lock: *pthread_spinlock_t) -> i32
+def pthread_spin_lock(lock: *pthread_spinlock_t) -> i32
+def pthread_spin_trylock(lock: *pthread_spinlock_t) -> i32
+def pthread_spin_unlock(lock: *pthread_spinlock_t) -> i32
+let PTHREAD_ONCE_INIT = 0
+
+// semaphore.h — Counting Semaphores (opaque in C, 32 bytes on Linux)
+struct sem_t {
+    raw: [32]u8
+}
+def sem_init(sem: *sem_t, pshared: i32, value: u32) -> i32
+def sem_destroy(sem: *sem_t) -> i32
+def sem_wait(sem: *sem_t) -> i32
+def sem_trywait(sem: *sem_t) -> i32
+def sem_post(sem: *sem_t) -> i32
+def sem_getvalue(sem: *sem_t, sval: *i32) -> i32
+
+// sys/socket.h + netinet/in.h + netdb.h — Sockets (Linux values)
+struct sockaddr {
+    family: u16
+    data: [14]u8
+}
+struct in_addr {
+    addr: u32
+}
+struct sockaddr_in {
+    family: u16
+    port: u16
+    addr: u32
+    zero: [8]u8
+}
+struct sockaddr_in6 {
+    family: u16
+    port: u16
+    flowinfo: u32
+    addr: [16]u8
+    scope_id: u32
+}
+struct addrinfo {
+    flags: i32
+    family: i32
+    socktype: i32
+    protocol: i32
+    addrlen: u32
+    addr: *sockaddr
+    canonname: *u8
+    next: *u0 // *addrinfo; spelled *u0, cast back with `as`
+}
+def socket(domain: i32, stype: i32, protocol: i32) -> i32
+def bind(sockfd: i32, addr: *sockaddr, addrlen: u32) -> i32
+def connect(sockfd: i32, addr: *sockaddr, addrlen: u32) -> i32
+def listen(sockfd: i32, backlog: i32) -> i32
+def accept(sockfd: i32, addr: *sockaddr, addrlen: *u32) -> i32
+def getsockname(sockfd: i32, addr: *sockaddr, addrlen: *u32) -> i32
+def getpeername(sockfd: i32, addr: *sockaddr, addrlen: *u32) -> i32
+def send(sockfd: i32, buf: *u0, len: usize, flags: i32) -> i64
+def recv(sockfd: i32, buf: *u0, len: usize, flags: i32) -> i64
+def sendto(sockfd: i32, buf: *u0, len: usize, flags: i32, dest: *sockaddr, addrlen: u32) -> i64
+def recvfrom(sockfd: i32, buf: *u0, len: usize, flags: i32, src: *sockaddr, addrlen: *u32) -> i64
+def setsockopt(sockfd: i32, level: i32, optname: i32, optval: *u0, optlen: u32) -> i32
+def getsockopt(sockfd: i32, level: i32, optname: i32, optval: *u0, optlen: *u32) -> i32
+def shutdown(sockfd: i32, how: i32) -> i32
+def socketpair(domain: i32, stype: i32, protocol: i32, sv: *i32) -> i32
+def getaddrinfo(node: *u8, service: *u8, hints: *addrinfo, res: **addrinfo) -> i32
+def freeaddrinfo(res: *addrinfo)
+def gai_strerror(errcode: i32) -> *u8
+def htons(hostshort: u16) -> u16
+def htonl(hostlong: u32) -> u32
+def ntohs(netshort: u16) -> u16
+def ntohl(netlong: u32) -> u32
+def inet_pton(af: i32, src: *u8, dst: *u0) -> i32
+def inet_ntop(af: i32, src: *u0, dst: *u8, size: u32) -> *u8
+
+let AF_UNSPEC = 0
+let AF_UNIX = 1
+let AF_INET = 2
+let AF_INET6 = 10
+let AF_NETLINK = 16
+let AF_PACKET = 17
+let SOCK_STREAM = 1
+let SOCK_DGRAM = 2
+let SOCK_RAW = 3
+let SOCK_SEQPACKET = 5
+let SOCK_NONBLOCK = 2048
+let SOCK_CLOEXEC = 524288
+let IPPROTO_IP = 0
+let IPPROTO_ICMP = 1
+let IPPROTO_TCP = 6
+let IPPROTO_UDP = 17
+let IPPROTO_IPV6 = 41
+let SOL_SOCKET = 1
+let SO_REUSEADDR = 2
+let SO_TYPE = 3
+let SO_ERROR = 4
+let SO_BROADCAST = 6
+let SO_SNDBUF = 7
+let SO_RCVBUF = 8
+let SO_KEEPALIVE = 9
+let SHUT_RD = 0
+let SHUT_WR = 1
+let SHUT_RDWR = 2
+let INADDR_ANY = 0
+let INADDR_BROADCAST = 4294967295
+let INADDR_LOOPBACK = 2130706433
+
+// dlfcn.h — Dynamic Loading
+def dlopen(path: *u8, mode: i32) -> *u0
+def dlsym(handle: *u0, symbol: *u8) -> *u0
+def dlclose(handle: *u0) -> i32
+def dlerror() -> *u8
+struct Dl_info {
+    fname: *u8
+    fbase: *u0
+    sname: *u8
+    saddr: *u0
+}
+def dladdr(addr: *u0, info: *Dl_info) -> i32
+let RTLD_LAZY = 1
+let RTLD_NOW = 2
+let RTLD_LOCAL = 0
+let RTLD_GLOBAL = 256
+let RTLD_NOLOAD = 4
+let RTLD_NODELETE = 4096
