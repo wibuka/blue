@@ -77,6 +77,10 @@ const char* identifier_name(Ast* node) {
             return identifier_name(node->star_expression.object);
         case AST_FIELD_DECLARATION:
             return identifier_name(node->field_declaration.name);
+        case AST_LABEL_STATEMENT:
+            return identifier_name(node->label_statement.name);
+        case AST_GOTO_STATEMENT:
+            return identifier_name(node->goto_statement.label);
         case AST_POLYMORPHIC:
             return node->identifier.name;
         case AST_RETURN_STATEMENT:

@@ -146,7 +146,7 @@ static void add_attributes(Ast* node) {
 }
 
 Ast* parser_import_statement();
-Ast* parser_namespace();
+Ast* parser_goto_statement();
 Ast* parser_primary_expression();
 Ast* parser_expression_statement();
 Ast* parser_enum_declaration();
@@ -157,7 +157,7 @@ Ast* parser_infinity_loop_statement();
 Ast* parser_range_loop_statement();
 Ast* parser_if_statement();
 Ast* parser_block_statement();
-Ast* parser_return();
+Ast* parser_return_statement();
 Ast* parse_type();
 Ast* parser_selector_expression(Ast* object);
 Ast* parser_postfix_expression(Ast* left);
@@ -525,6 +525,33 @@ Ast* parser_import_statement() {
     return import_node;
 }
 
+Ast* parser_goto_statement() {
+    SourceSite goto_site = token_current().source;
+    token_next();
+    
+    Ast* goto_node = Ast_create(AST_GOTO_STATEMENT);
+    goto_node->source = goto_site;
+    goto_node->goto_statement.label = Ast_create_identifier(token_current().data);
+    token_next();
+    if (token_is(token_current(), ";")) {
+       token_next();
+    }
+    return goto_node;
+}
+
+Ast* pareser_label_statement() {
+    SourceSite label_site = token_current().source;
+
+    Ast* label_node = Ast_create(AST_LABEL_STATEMENT);
+    label_node->source = label_site;
+    label_node->label_statement.name = Ast_create_identifier(token_current().data);
+    token_next();
+    if (token_is(token_current(), ":")) {
+        token_next();
+    }
+    return label_node;
+}
+
 // Types that can only be spelled as a type expression, i.e. never as a plain
 // function reference. `*Foo` is a pointer type, `[]u8` a slice, `[N]u8` an
 // array and `(i32) -> i32` a function type.
@@ -767,6 +794,30 @@ Ast* parser_expression_statement() {
     return lhs;
 }
 
+Ast* parser_break_statement() {
+    Ast* break_node = Ast_create(AST_BREAK_STATEMENT);
+    token_next();
+    if (token_is(token_current(), ";")) {
+        token_next();
+    }
+    else if (!parser.newline && !token_is(token_current(), "}")) {
+        log_source_error(token_current().source, ERROR_SYNTAX, "Expected ';'");
+    }
+    return break_node;
+}
+
+Ast* parser_continue_statement() {
+    Ast* continue_node = Ast_create(AST_CONTINUE_STATEMENT);
+    token_next();
+    if (token_is(token_current(), ";")) {
+        token_next();
+    }
+    else if (!parser.newline && !token_is(token_current(), "}")) {
+        log_source_error(token_current().source, ERROR_SYNTAX, "Expected ';'");
+    }
+    return continue_node;
+}
+
 Ast* parser_statement() {
     TokenInfo token = token_current();
     if (token.data == NULL) return NULL;
@@ -799,34 +850,24 @@ Ast* parser_statement() {
         return parser_enum_declaration();
     }
     else if (token.type == TOKEN_RETURN) {
-        return parser_return();
+        return parser_return_statement();
     }
-    else if (token.type == TOKEN_NAMESPACE) {
-        return parser_namespace();
+    else if (token.type == TOKEN_GOTO) {
+        return parser_goto_statement();
     }
     else if (token.type == TOKEN_BREAK) {
-        Ast* node = Ast_create(AST_BREAK_STATEMENT);
-        token_next();
-        if (token_is(token_current(), ";")) {
-            token_next();
-        }
-        else if (!parser.newline && !token_is(token_current(), "}")) {
-            log_source_error(token_current().source, ERROR_SYNTAX, "Expected ';'");
-        }
-        return node;
+        return parser_break_statement();
     }
     else if (token.type == TOKEN_CONTINUE) {
-        Ast* node = Ast_create(AST_CONTINUE_STATEMENT);
-        token_next();
-        if (token_is(token_current(), ";")) {
-            token_next();
-        }
-        else if (!parser.newline && !token_is(token_current(), "}")) {
-            log_source_error(token_current().source, ERROR_SYNTAX, "Expected ';'");
-        }
-        return node;
+        return parser_continue_statement();
     }
-
+    else if (token.type == TOKEN_IDENTIFIER) {
+        TokenInfo next = token_seek(parser.current + 1);
+        if (token_is(next, ":")) {
+            return pareser_label_statement();
+        }
+        return parser_expression_statement();
+    }
     return parser_expression_statement();
 }
 
@@ -1339,7 +1380,7 @@ Ast* parser_struct_declaration() {
     else if (token_is(token_current(), ";")) {
         token_next();
     }
-else if (!parser.newline && !token_end() && !token_is(token_current(), "}")) {
+    else if (!parser.newline && !token_end() && !token_is(token_current(), "}")) {
         log_source_error(token_current().source, ERROR_SYNTAX, "Expected '{'");
     }
 
@@ -1535,30 +1576,7 @@ Ast* parser_function_declaration() {
     return function;
 }
 
-Ast* parser_namespace() {
-    Ast* namespace_node = Ast_create(AST_NAMESPACE);
-    namespace_node->source = token_current().source;
-
-    token_next();
-
-    if (token_current().type != TOKEN_IDENTIFIER) {
-        log_source_error(token_current().source, ERROR_SYNTAX, "Invalid namespace identifier");
-    }
-    namespace_node->namespace.name = Ast_create_identifier(token_current().data);
-
-    token_next();
-
-    if (token_is(token_current(), ";")) {
-        token_next();
-    }
-    else if (!parser.newline && !token_is(token_current(), "}")) {
-        log_source_error(token_current().source, ERROR_SYNTAX, "Expected ';'");
-    }
-    
-    return namespace_node;
-}
-
-Ast* parser_return() {
+Ast* parser_return_statement() {
     Ast* return_node = Ast_create(AST_RETURN_STATEMENT);
     return_node->source = token_current().source;
 

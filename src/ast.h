@@ -27,6 +27,8 @@ typedef enum {
     AST_RETURN_STATEMENT,
     AST_CONTINUE_STATEMENT,
     AST_BREAK_STATEMENT,
+    AST_GOTO_STATEMENT,
+    AST_LABEL_STATEMENT,
 
     AST_ASSIGNMENT_EXPRESSION,
     AST_INDEX_EXPRESSION,
@@ -138,6 +140,14 @@ typedef struct Ast {
             Ast* sequence;
             Ast* body;
         } loop_statement;
+
+        struct {
+            Ast* label;
+        } goto_statement;
+
+        struct {
+            Ast* name;
+        } label_statement;
 
         struct {
             Ast* test;
@@ -288,8 +298,8 @@ typedef struct Ast {
     };
 
     Symbol* symbol;
-    Scope* scope;
-    char** attributes;
+    Scope*  scope;
+    char**  attributes;
 } Ast;
 
 Ast* Ast_create(AstType type);

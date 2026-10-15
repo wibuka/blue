@@ -94,10 +94,10 @@ typedef struct StructDef {
     size_t        field_count;
 } StructDef;
 
-typedef struct Scope {
+struct Scope {
     Ast** nodes;
     struct Scope* parent;
-} Scope;
+};
 
 extern const TypeData TYPE_U0_DATA;
 extern const TypeData TYPE_U8_DATA;

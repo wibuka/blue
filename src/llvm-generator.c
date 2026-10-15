@@ -15,11 +15,14 @@ typedef struct StructReference {
 } StructReference;
 
 typedef struct LLVMEnvironment {
-    LLVMContextRef context;
-    LLVMModuleRef  module;
-    LLVMBuilderRef builder;
-    LLVMValueRef   function;
-    LoopContext    loop;
+    LLVMContextRef      context;
+    LLVMModuleRef       module;
+    LLVMBuilderRef      builder;
+    LLVMValueRef        function;
+    LoopContext         loop;
+    Ast**               function_labels;
+    LLVMBasicBlockRef*  function_label_blocks;
+    int                 function_label_blocks_count;
 } LLVMEnvironment;
 
 static int ast_has_attribute(Ast* node, const char* name);
@@ -767,6 +770,30 @@ LLVMValueRef llvm_function_alias(Ast* node, bool is_global) {
     return node->symbol->llvm_value;
 }
 
+static void get_labels(Ast* node, Ast*** labels) {
+    if (!node || !labels) return;
+    if (node->type == AST_LABEL_STATEMENT) {
+        vector_add(labels, node);
+    }
+    else if (node->type == AST_BLOCK_STATEMENT) {
+        Ast** stmts = node->block.statements;
+        for (int i = 0; i < vector_size(stmts); i++) {
+            get_labels(stmts[i], labels);
+        }
+    }
+    else if (node->type == AST_IF_STATEMENT) {
+        get_labels(node->if_statement.alternate, labels);
+        get_labels(node->if_statement.consequent, labels);
+    }
+    else if (node->type == AST_FUNCTION_DEFINITION) {
+        get_labels(node->function_declaration.body, labels);
+    }
+    else if (node->type == AST_LOOP_STATEMENT) {
+        get_labels(node->loop_statement.body, labels);
+    }
+    return;
+}
+
 void llvm_function_body(Ast* node) {
     assert(node != NULL);
     assert(node->symbol);
@@ -840,9 +867,25 @@ void llvm_function_body(Ast* node) {
         param->symbol->llvm_value = slot;
         param->symbol->llvm_type  = stype;
     }
+    
+    Ast** labels = vector_create();
+    get_labels(node, &labels);
+
+    LLVMBasicBlockRef* label_blocks = malloc(sizeof(LLVMBasicBlockRef) * vector_size(labels));
+
+    for (int i = 0; i < vector_size(labels); i++) {
+        Ast* label = labels[i];
+        label_blocks[i] = LLVMAppendBasicBlockInContext(
+            env.context,
+            function,
+            identifier_name(label->label_statement.name)
+        );
+    }
+
+    env.function_label_blocks       = label_blocks;
+    env.function_label_blocks_count = vector_size(labels);
 
     llvm_block(node->function_declaration.body, false);
-
     LLVMBasicBlockRef current = LLVMGetInsertBlock(env.builder);
     if (current && !LLVMGetBasicBlockTerminator(current)) {
         TypeData* ret_td = TypeData_of(node);
@@ -1045,6 +1088,30 @@ void llvm_loop_statement(Ast* node, bool is_global) {
 
     pop_loop();
     LLVMPositionBuilderAtEnd(b, exit);
+}
+
+static LLVMBasicBlockRef find_label_block(const char* name) {
+    for (int i = 0; i < env.function_label_blocks_count; i++) {
+        LLVMBasicBlockRef block = env.function_label_blocks[i];
+        if (str_match(LLVMGetBasicBlockName(block), name)) {
+            return block;
+        }
+    }
+    return NULL;
+}
+
+void llvm_goto_statement(Ast* node) {
+    LLVMBasicBlockRef label_block = find_label_block(identifier_name(node));
+    LLVMBuildBr(env.builder, label_block);
+}
+
+void llvm_label_statement(Ast* node) {
+    LLVMBasicBlockRef label_block = find_label_block(identifier_name(node));
+    LLVMBasicBlockRef current = LLVMGetInsertBlock(env.builder);
+    if (current && !LLVMGetBasicBlockTerminator(current) && current != label_block) {
+        LLVMBuildBr(env.builder, label_block);
+    }
+    LLVMPositionBuilderAtEnd(env.builder, label_block);
 }
 
 LLVMValueRef llvm_literal(Ast* node) {
@@ -2272,6 +2339,12 @@ void llvm_statement(Ast* stmt, bool is_global) {
         case AST_ENUM_DECLARATION:
             llvm_enum_declaration(stmt);
             break;
+        case AST_GOTO_STATEMENT:
+            llvm_goto_statement(stmt);
+            break;
+        case AST_LABEL_STATEMENT:
+            llvm_label_statement(stmt);
+            break;
         default:
             break;
     }
@@ -2282,11 +2355,14 @@ void llvm_block(Ast* node, bool is_global) {
     Ast** stmts = node->block.statements;
 
     for (size_t i = 0; i < vector_size(stmts); i++) {
-        llvm_statement(stmts[i], is_global);
+        Ast* stmt = stmts[i];
         LLVMBasicBlockRef current = LLVMGetInsertBlock(env.builder);
-        if (current && LLVMGetBasicBlockTerminator(current)) {
-            break;
-        }
+        if (current && 
+                LLVMGetBasicBlockTerminator(current) && 
+                    stmt->type != AST_LABEL_STATEMENT) 
+                        continue;
+
+        llvm_statement(stmt, is_global);
     }
 }
 

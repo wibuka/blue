@@ -37,6 +37,8 @@ const char *ast_type_name(AstType type) {
         case AST_RETURN_STATEMENT:      return "RETURN";
         case AST_CONTINUE_STATEMENT:    return "CONTINUE";
         case AST_BREAK_STATEMENT:       return "BREAK";
+        case AST_GOTO_STATEMENT:        return "GOTO";
+        case AST_LABEL_STATEMENT:       return "LABEL";
         case AST_STAR_EXPRESSION:       return "STAR";
         case AST_ARRAY_TYPE:            return "ARRAY_TYPE";
         case AST_SLICE_TYPE:            return "SLICE_TYPE";
@@ -250,6 +252,14 @@ static cJSON *ast_to_json(Ast *node) {
         case AST_CONTINUE_STATEMENT:
         case AST_BREAK_STATEMENT:
             break;
+        case AST_GOTO_STATEMENT: {
+            cJSON_AddItemToObject(obj, "label", ast_to_json(node->goto_statement.label));
+            break;
+        }
+        case AST_LABEL_STATEMENT: {
+            cJSON_AddItemToObject(obj, "name", ast_to_json(node->label_statement.name));
+            break;
+        }
         case AST_LOOP_STATEMENT: {
             if (node->loop_statement.iterator)
                 cJSON_AddItemToObject(obj, "iterator", ast_to_json(node->loop_statement.iterator));

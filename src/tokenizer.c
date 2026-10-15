@@ -59,8 +59,6 @@ TokenType get_token_type(const char* str) {
     if (is_int(str))   return TOKEN_INTEGER;
     if (is_float(str)) return TOKEN_FLOAT;
 
-    MATCH("namespace",   NAMESPACE);
-
     MATCH("var",      VAR);       
     MATCH("let",      LET);
     MATCH("def",      DEF);
@@ -73,6 +71,7 @@ TokenType get_token_type(const char* str) {
     MATCH("else",     ELSE);
     MATCH("for",      FOR);
     MATCH("loop",     LOOP);
+    MATCH("goto",     GOTO);
     MATCH("break",    BREAK);
     MATCH("continue", CONTINUE);
     MATCH("return",   RETURN);
@@ -101,7 +100,7 @@ const char *token_type_name(TokenType type) {
     T(AND);         T(CHAR);         T(ELSE);         T(LOOP);         T(FLOAT);
     T(RANGE);       T(ARROW);        T(BREAK);        T(IMPORT);       T(RETURN);       T(STRING);
     T(STRUCT);      T(SYMBOL);       T(UNKNOW);       T(ADDRESS);      T(NEWLINE);      T(BOOLEAN);      T(INTEGER);
-    T(PACKAGE);     T(CONTINUE);     T(ELLIPSIS);     T(SEMICOLON);    T(IDENTIFIER);   T(USING);        T(ENUM);           T(NAMESPACE);
+    T(PACKAGE);     T(CONTINUE);     T(ELLIPSIS);     T(SEMICOLON);    T(IDENTIFIER);   T(USING);        T(ENUM);           T(GOTO);
 
 #undef T
     default: return "UNKNOWN_TOKEN";

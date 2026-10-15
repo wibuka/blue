@@ -27,7 +27,7 @@ typedef enum {
     TOKEN_ATTRIBUTE,    TOKEN_ADDRESS,
     TOKEN_RANGE,        TOKEN_COMMENT,
     TOKEN_HEXADECIMAL,  TOKEN_BINARY,
-    TOKEN_NAMESPACE    
+    TOKEN_GOTO
 }TokenType;
 
 typedef struct {

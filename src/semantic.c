@@ -562,7 +562,7 @@ static Symbol* Symbol_create(const char* name, TypeData* type, Ast* declaration)
     return symbol;
 }
 
-static int is_global_scope(const Scope* scope) {
+static int scope_is_global(const Scope* scope) {
     if (!scope)                 return 1;
     if (scope->parent == NULL)  return 1;
     return 0;
@@ -631,12 +631,15 @@ static Ast* resolve_function_alias(Ast* decl) {
 
 typedef struct {
     Ast* declaration;
-    bool returns_void;
-} FncRef;
+    bool has_return_void;
+    bool has_goto_statement;
+    Ast** goto_statements;
+    Ast** label_statements;
+} FunctionRef;
 
-FncRef current_function = {0};
-static inline FncRef FncRef_create(Ast* node, bool returns_void) {
-    return (FncRef){node, returns_void};
+FunctionRef current_function = {0};
+static inline FunctionRef FncRef_create(Ast* node, bool returns_void) {
+    return (FunctionRef){node, returns_void};
 }
 static int loop_depth = 0;
 
@@ -1082,7 +1085,7 @@ void semantic_function_declaration(Ast* node, Scope* scope) {
     const char* function_name = identifier_name(node->function_declaration.name);
     Ast* function_type = node->function_declaration.type;
 
-    if (!is_global_scope(scope)) {
+    if (!scope_is_global(scope)) {
         NON_GLOBAL_STATEMENT_ERROR(node->source, function_name);
         return;
     }
@@ -1149,7 +1152,7 @@ void semantic_function_declaration(Ast* node, Scope* scope) {
 static void semantic_function_alias(Ast* node, Scope* scope) {
     const char* alias_name = identifier_name(node->function_alias.name);
 
-    if (!is_global_scope(scope)) {
+    if (!scope_is_global(scope)) {
         NON_GLOBAL_STATEMENT_ERROR(node->source, alias_name);
         return;
     }
@@ -1232,8 +1235,6 @@ static void semantic_parameter_declaration(Ast* node, Scope* scope) {
         const char* pname = identifier_name(node->parameter_declaration.name);
         char subject[128];
         snprintf(subject, sizeof(subject), "parameter '%s'", pname ? pname : "<anonymous>");
-        // Parameter nodes carry no source site of their own, so point at the
-        // declared type instead.
         SourceSite site = node->source.path ? node->source
                                            : node->parameter_declaration.type->source;
         UNSIZED_TYPE_ERROR(site, subject, TypeData_to_string(type), unsized);
@@ -1315,7 +1316,6 @@ void semantic_identifier(Ast* node, Scope* scope, TypeData* expected_type) {
     }
 }
 
-
 void semantic_function_body(Ast* node, Scope* scope) {
     assert(node->type == AST_FUNCTION_DEFINITION);
     size_t row = node->source.row;
@@ -1326,6 +1326,9 @@ void semantic_function_body(Ast* node, Scope* scope) {
     TypeData* td_fnc = function_type ? TypeData_of(node) : (TypeData*)(&TYPE_U0_DATA);
 
     current_function = FncRef_create(node, is_void_type(td_fnc));
+    current_function.label_statements = vector_create();
+    current_function.goto_statements = vector_create();
+
     Scope* function_scope = scope_create(scope);
 
     if (node->function_declaration.params) {
@@ -1362,7 +1365,7 @@ void semantic_function_body(Ast* node, Scope* scope) {
                     stmt->symbol = Symbol_create(mangled, td_fnc, stmt);
                 }
                 if (stmt->type == AST_FUNCTION_DEFINITION) {
-                    FncRef outer = current_function;
+                    FunctionRef outer = current_function;
                     semantic_function_body(stmt, scope);
                     current_function = outer;
                 }
@@ -1374,13 +1377,31 @@ void semantic_function_body(Ast* node, Scope* scope) {
         if (!is_void_type(td_fnc) && !has_return) {
             MISSING_RETURN_ERROR(node->source, function_name);
         }
+
+        if (current_function.has_goto_statement) {
+            for (int i = 0; i < vector_size(current_function.goto_statements); i++) {
+                Ast* goto_stmt = current_function.goto_statements[i];
+                const char* label_name = identifier_name(goto_stmt->goto_statement.label);
+                Ast* label_stmt = find_declaration(label_name, function_scope, false, NULL, NULL);
+                if (label_stmt && label_stmt->type == AST_LABEL_STATEMENT) {
+                    goto_stmt->goto_statement.label->symbol = Symbol_create(
+                        label_name,
+                        NULL,
+                        label_stmt->label_statement.name
+                    );
+                }
+                else {
+                    UNDECLARED_NAME_ERROR(goto_stmt->source, identifier_name(goto_stmt));
+                }
+            }
+        }
     }
 }
 
 void semantic_if_statement(Ast* node, Scope* scope) {
     size_t row = node->source.row;
     size_t col = node->source.col;
-    if (is_global_scope(scope)) GLOBAL_STATEMENT_ERROR(node->source, "if");
+    if (scope_is_global(scope)) GLOBAL_STATEMENT_ERROR(node->source, "if");
 
     Ast* if_node = node;
 
@@ -1591,7 +1612,7 @@ void semantic_call_expression(Ast* node, Scope* scope) {
     bool is_indirect = (indirect_td != NULL);
     bool is_struct = !is_indirect && (decl->type == AST_STRUCT_DECLARATION);
 
-    if (is_global_scope(scope) && !is_struct) {
+    if (scope_is_global(scope) && !is_struct) {
         GLOBAL_FUNCTION_CALL_ERROR(node->source, identifier_name(node));
         return;
     }
@@ -1676,7 +1697,6 @@ void semantic_call_expression(Ast* node, Scope* scope) {
         callee->symbol = sym;
     }
 }
-
 static int private_struct_counter = 0;
 
 static void semantic_struct_declaration(Ast* node, Scope* scope) {
@@ -1684,7 +1704,7 @@ static void semantic_struct_declaration(Ast* node, Scope* scope) {
 
     bool is_private = has_attribute(node, "@private");
 
-    if (!is_global_scope(scope) && !is_private) {
+    if (!scope_is_global(scope) && !is_private) {
         if (!current_function.declaration) {
             NON_GLOBAL_STATEMENT_ERROR(node->source, struct_name);
         }
@@ -1721,7 +1741,7 @@ static void semantic_struct_declaration(Ast* node, Scope* scope) {
         char buf[512];
         snprintf(buf, sizeof(buf), "%s.%d", struct_name, private_struct_counter++);
         qual_name = strdup(buf);
-    } else if (!is_global_scope(scope)) {
+    } else if (!scope_is_global(scope)) {
         const char* parent = current_function.declaration ? identifier_name(current_function.declaration) : "local";
         qual_name = make_qualified_name(parent, struct_name);
     }
@@ -1761,7 +1781,7 @@ static void semantic_struct_body(Ast* node, Scope* scope) {
     const char* lookup_name = struct_name;
     char* qual = NULL;
     
-    if (!is_global_scope(scope)) {
+    if (!scope_is_global(scope)) {
         const char* parent = current_function.declaration ? identifier_name(current_function.declaration) : "local";
         qual = make_qualified_name(parent, struct_name);
         if (qual) lookup_name = qual;
@@ -1802,7 +1822,7 @@ void semantic_return_statement(Ast* node, Scope* scope) {
     size_t row = node->source.row;
     size_t col = node->source.col;
     
-    if (is_global_scope(scope)) {
+    if (scope_is_global(scope)) {
         GLOBAL_STATEMENT_ERROR(node->source, "return");
     }
 
@@ -1841,7 +1861,7 @@ void semantic_loop_statement(Ast* node, Scope* scope) {
     size_t row = node->source.row;
     size_t col = node->source.col;
 
-    if (is_global_scope(scope)) {
+    if (scope_is_global(scope)) {
         GLOBAL_STATEMENT_ERROR(node->source, "for");
     }
 
@@ -2178,7 +2198,6 @@ void semantic_binary_expression(Ast* node, Scope* scope, TypeData* expected_type
 }
 
 
-
 static void semantic_index_expression(Ast* node, Scope* scope) {
     size_t row = node->source.row;
     size_t col = node->source.col;
@@ -2492,9 +2511,11 @@ void semantic_expression(Ast* node, Scope* scope, TypeData* expected_type) {
         case AST_ASSIGNMENT_EXPRESSION:
             semantic_assignment_expression(node, scope);
             break;
+
         case AST_INDEX_EXPRESSION:
             semantic_index_expression(node, scope);
             break;
+
 
         default:
             printf("%s\n",identifier_name(node));
@@ -2608,7 +2629,7 @@ void semantic_statement(Ast* node, Scope* scope) {
             break;
 
         case AST_FUNCTION_ALIAS:
-            if (!is_global_scope(scope)) {
+            if (!scope_is_global(scope)) {
                 NON_GLOBAL_STATEMENT_ERROR(node->source, identifier_name(node));
             }
             break;
@@ -2621,13 +2642,26 @@ void semantic_statement(Ast* node, Scope* scope) {
             semantic_polymorphic(node, scope);
             break;
 
-        case AST_IMPORT_STATEMENT:
+        case AST_GOTO_STATEMENT:
+            current_function.has_goto_statement = true;
+            vector_add(&current_function.goto_statements, node);
             break;
+
+        case AST_LABEL_STATEMENT: {
+            const char* label_name = identifier_name(node->label_statement.name);
+            Ast* existing = find_declaration(label_name, scope, true, NULL, node);
+            if (existing) {
+                DUPLICATE_NAME_ERROR(node->source, label_name);
+            }
+            scope_add(scope, node);
+            vector_add(&current_function.label_statements, node);
+            break;
+        }
 
         case AST_USING_DECLARATION:
             resolve_using_declaration_kind(node, scope);
             if (node->type == AST_FUNCTION_ALIAS) {
-                if (!is_global_scope(scope)) {
+                if (!scope_is_global(scope)) {
                     NON_GLOBAL_STATEMENT_ERROR(node->source, identifier_name(node));
                 }
             } else {
@@ -2640,10 +2674,10 @@ void semantic_statement(Ast* node, Scope* scope) {
     }
 }
 
-static void declare_enums_recursive(Ast* block, Scope* scope) {
-    if (!block || !block->block.statements) return;
-    for (size_t i = 0; i < vector_size(block->block.statements); i++) {
-        Ast* stmt = block->block.statements[i];
+static void declare_enums_recursive(Ast* root, Scope* scope) {
+    if (!root || !root->block.statements) return;
+    for (size_t i = 0; i < vector_size(root->block.statements); i++) {
+        Ast* stmt = root->block.statements[i];
         if (!stmt) continue;
         if (stmt->type == AST_ENUM_DECLARATION) {
             semantic_enum_declaration(stmt, scope);
@@ -2651,10 +2685,10 @@ static void declare_enums_recursive(Ast* block, Scope* scope) {
     }
 }
 
-static void declare_structs_recursive(Ast* block, Scope* scope) {
-    if (!block || !block->block.statements) return;
-    for (size_t i = 0; i < vector_size(block->block.statements); i++) {
-        Ast* stmt = block->block.statements[i];
+static void declare_structs_recursive(Ast* root, Scope* scope) {
+    if (!root || !root->block.statements) return;
+    for (size_t i = 0; i < vector_size(root->block.statements); i++) {
+        Ast* stmt = root->block.statements[i];
         if (!stmt) continue;
         if (stmt->type == AST_STRUCT_DECLARATION) {
             semantic_struct_declaration(stmt, scope);
@@ -2662,12 +2696,12 @@ static void declare_structs_recursive(Ast* block, Scope* scope) {
     }
 }
 
-static void declare_usings_recursive(Ast* block, Scope* scope) {
-    if (!block || !block->block.statements) return;
-    size_t count = vector_size(block->block.statements);
+static void declare_usings_recursive(Ast* root, Scope* scope) {
+    if (!root || !root->block.statements) return;
+    size_t count = vector_size(root->block.statements);
 
     for (size_t i = 0; i < count; i++) {
-        Ast* stmt = block->block.statements[i];
+        Ast* stmt = root->block.statements[i];
         if (!stmt || stmt->type != AST_USING_DECLARATION) continue;
         if (stmt->using_declaration.ambiguous) continue;
         semantic_using_declaration(stmt, scope);
@@ -2677,7 +2711,7 @@ static void declare_usings_recursive(Ast* block, Scope* scope) {
     while (changed) {
         changed = false;
         for (size_t i = 0; i < count; i++) {
-            Ast* stmt = block->block.statements[i];
+            Ast* stmt = root->block.statements[i];
             if (!stmt || stmt->type != AST_USING_DECLARATION) continue;
             if (!stmt->using_declaration.ambiguous) continue;
             if (!using_target_is_type(stmt->using_declaration.target, scope)) continue;
@@ -2689,7 +2723,7 @@ static void declare_usings_recursive(Ast* block, Scope* scope) {
     }
 
     for (size_t i = 0; i < count; i++) {
-        Ast* stmt = block->block.statements[i];
+        Ast* stmt = root->block.statements[i];
         if (!stmt || stmt->type != AST_USING_DECLARATION) continue;
         if (!stmt->using_declaration.ambiguous) continue;
         retype_using_as_function_alias(stmt);
@@ -2697,10 +2731,10 @@ static void declare_usings_recursive(Ast* block, Scope* scope) {
 
 }
 
-static void declare_vars_funcs_recursive(Ast* block, Scope* scope) {
-    if (!block || !block->block.statements) return;
-    for (size_t i = 0; i < vector_size(block->block.statements); i++) {
-        Ast* stmt = block->block.statements[i];
+static void declare_vars_funcs_recursive(Ast* root, Scope* scope) {
+    if (!root || !root->block.statements) return;
+    for (size_t i = 0; i < vector_size(root->block.statements); i++) {
+        Ast* stmt = root->block.statements[i];
         if (!stmt) continue;
         if (stmt->type == AST_VARIABLE_DECLARATION) {
             semantic_variable_declaration(stmt, scope);
@@ -2713,10 +2747,10 @@ static void declare_vars_funcs_recursive(Ast* block, Scope* scope) {
 
 }
 
-static void resolve_aliases_recursive(Ast* block, Scope* scope, int* changed) {
-    if (!block || !block->block.statements) return;
-    for (size_t i = 0; i < vector_size(block->block.statements); i++) {
-        Ast* stmt = block->block.statements[i];
+static void resolve_aliases_recursive(Ast* root, Scope* scope, int* changed) {
+    if (!root || !root->block.statements) return;
+    for (size_t i = 0; i < vector_size(root->block.statements); i++) {
+        Ast* stmt = root->block.statements[i];
         if (!stmt) continue;
         if (stmt->type == AST_FUNCTION_ALIAS) {
             bool before = stmt->symbol && stmt->symbol->declaration;
@@ -2728,10 +2762,10 @@ static void resolve_aliases_recursive(Ast* block, Scope* scope, int* changed) {
 
 }
 
-static void report_unresolved_aliases_recursive(Ast* block, Scope* scope) {
-    if (!block || !block->block.statements) return;
-    for (size_t i = 0; i < vector_size(block->block.statements); i++) {
-        Ast* stmt = block->block.statements[i];
+static void report_unresolved_aliases_recursive(Ast* root, Scope* scope) {
+    if (!root || !root->block.statements) return;
+    for (size_t i = 0; i < vector_size(root->block.statements); i++) {
+        Ast* stmt = root->block.statements[i];
         if (!stmt) continue;
         if (stmt->type == AST_FUNCTION_ALIAS) {
             semantic_function_alias_report_unresolved(stmt);
@@ -2739,55 +2773,66 @@ static void report_unresolved_aliases_recursive(Ast* block, Scope* scope) {
     }
 }
 
-static void resolve_aliases_fixpoint(Ast* block, Scope* scope) {
+static void resolve_aliases_fixpoint(Ast* root, Scope* scope) {
     for (int round = 0; round < 64; round++) {
         int changed = 0;
-        resolve_aliases_recursive(block, scope, &changed);
+        resolve_aliases_recursive(root, scope, &changed);
         if (!changed) break;
     }
-    report_unresolved_aliases_recursive(block, scope);
+    report_unresolved_aliases_recursive(root, scope);
 }
 
-static void define_bodies_recursive(Ast* block, Scope* scope) {
-    if (!block || !block->block.statements) return;
+static void define_bodies_recursive(Ast* root, Scope* scope) {
+    if (!root || !root->block.statements) return;
 
-    for (size_t i = 0; i < vector_size(block->block.statements); i++) {
-        Ast* stmt = block->block.statements[i];
+    for (size_t i = 0; i < vector_size(root->block.statements); i++) {
+        Ast* stmt = root->block.statements[i];
         if (!stmt || stmt->type != AST_STRUCT_DECLARATION) continue;
         semantic_struct_body(stmt, scope);
     }
-    for (size_t i = 0; i < vector_size(block->block.statements); i++) {
-        Ast* stmt = block->block.statements[i];
+    for (size_t i = 0; i < vector_size(root->block.statements); i++) {
+        Ast* stmt = root->block.statements[i];
         if (!stmt) continue;
         if (stmt->type == AST_FUNCTION_DEFINITION) {
             semantic_function_body(stmt, scope);
         } else if (stmt->type == AST_STRUCT_DECLARATION) {
             continue;
-        } else if (is_global_scope(scope)) {
+        } else if (scope_is_global(scope)) {
             switch (stmt->type) {
                 case AST_IDENTIFIER:
                     GLOBAL_STATEMENT_ERROR(stmt->source, identifier_name(stmt));
                     break;
+
                 case AST_LOOP_STATEMENT:
                     GLOBAL_STATEMENT_ERROR(stmt->source, "loop");
                     break;
+
                 case AST_CALL_EXPRESSION:
                     GLOBAL_STATEMENT_ERROR(stmt->source, "function call");
                     break;
+
                 case AST_ASSIGNMENT_EXPRESSION:
                     GLOBAL_STATEMENT_ERROR(stmt->source, "assignment");
                     break;
-                default: break;
+
+                case AST_GOTO_STATEMENT:
+                    GLOBAL_STATEMENT_ERROR(stmt->source, "goto");
+                    break;
+
+                default:
+                    break;
             }
-        }
+        }       
     }
 }
 
 void semantic(Ast *root, Ast** builtin) {
+
     Scope* global_scope = scope_create(NULL);
     for (size_t i = 0; i < vector_size(builtin); i++) {
         semantic_statement(builtin[i], global_scope);
     }
+
     declare_enums_recursive(root, global_scope);
     declare_structs_recursive(root, global_scope);
     declare_usings_recursive(root, global_scope);
