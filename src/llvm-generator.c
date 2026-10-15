@@ -2005,37 +2005,12 @@ LLVMValueRef llvm_call_expression(Ast* node, bool is_global) {
     }
 
     bool is_indirect = decl->type != AST_FUNCTION_DECLARATION &&
-                       decl->type != AST_FUNCTION_DEFINITION &&
-                       decl->type != AST_STRUCT_DECLARATION;
+                       decl->type != AST_FUNCTION_DEFINITION;
 
     if (!is_indirect) {
         if (!decl->symbol) return NULL;
-        if (!decl->symbol->llvm_value && decl->type != AST_STRUCT_DECLARATION) return NULL;
+        if (!decl->symbol->llvm_value) return NULL;
         if (!decl->symbol->llvm_type) return NULL;
-    }
-
-    if (decl->type == AST_STRUCT_DECLARATION) {
-        LLVMTypeRef struct_type = decl->symbol->llvm_type;
-        assert(struct_type != NULL);
-
-        if (is_global) {
-            LLVMValueRef* const_args = NULL;
-            if (arg_size > 0) {
-                const_args = c_alloc(sizeof(LLVMValueRef) * arg_size);
-                for (size_t i = 0; i < arg_size; i++) {
-                    const_args[i] = llvm_expression(args[i], true);
-                }
-            }
-            LLVMValueRef struct_val = LLVMConstNamedStruct(struct_type, const_args, (unsigned)arg_size);
-            return struct_val;
-        }
-
-        LLVMValueRef struct_val = LLVMGetUndef(struct_type);
-        for (size_t i = 0; i < arg_size; i++) {
-            LLVMValueRef arg_val = llvm_expression(args[i], false);
-            struct_val = LLVMBuildInsertValue(env.builder, struct_val, arg_val, (unsigned)i, "");
-        }
-        return struct_val;
     }
 
     LLVMValueRef fnc_value;

@@ -93,6 +93,15 @@
         log_source_error(source, ERROR_UNKNOWN, log_description); \
     } while (0)
 
+#define STRUCT_NOT_CALLABLE_ERROR(source, name) \
+    do { \
+        semantic_errors = true; \
+        snprintf(log_description, sizeof(log_description), \
+                "struct '%s' is not callable; use '%s{...}' to construct a value", \
+                name, name); \
+        log_source_error(source, ERROR_UNKNOWN, log_description); \
+    } while (0)
+
 #define OPERATOR_TYPE_ERROR(source, op, left_type, right_type) \
     do { \
         semantic_errors = true; \
@@ -364,8 +373,40 @@
         log_source_error(source, ERROR_UNKNOWN, log_description); \
     } while (0)
 
+#define INVALID_OVERLOAD_FUNCTION_ERROR(source, name) \
+    do { \
+        semantic_errors = true; \
+        snprintf(log_description, sizeof(log_description), \
+                "'%s' is not a function", name); \
+        log_source_error(source, ERROR_UNKNOWN, log_description); \
+    } while (0)
+
+#define EMPTY_OVERLOAD_SET_ERROR(source) \
+    do { \
+        semantic_errors = true; \
+        snprintf(log_description, sizeof(log_description), \
+                "function overload set cannot be empty"); \
+        log_source_error(source, ERROR_UNKNOWN, log_description); \
+    } while (0)
+
+#define DUPLICATE_OVERLOAD_ERROR(source, name) \
+    do { \
+        semantic_errors = true; \
+        snprintf(log_description, sizeof(log_description), \
+                "duplicate function overload '%s': conflicting parameter types", name); \
+        log_source_error(source, ERROR_UNKNOWN, log_description); \
+    } while (0)
+
+#define NO_MATCHING_FUNCTION_OVERLOAD_ERROR(source, name) \
+    do { \
+        semantic_errors = true; \
+        snprintf(log_description, sizeof(log_description), \
+                "no matching function overload for '%s'", name); \
+        log_source_error(source, ERROR_UNKNOWN, log_description); \
+    } while (0)
 
 static bool semantic_errors = false;
+static Scope* global_scope = NULL;
 
 static bool eval_constant_integer(Ast* expr, long* out_val);
 static int check_literal_fits_target(SourceSite source, Ast* expr, TypeData* target_type);
@@ -1549,13 +1590,102 @@ void semantic_compound_literal(Ast* node, Scope* scope) {
     node->symbol = sym;
 }
 
+static bool function_parameters_match(Ast* a, Ast* b) {
+    Ast** params_a = a->function_declaration.params;
+    Ast** params_b = b->function_declaration.params;
+
+    int count_a = vector_size(params_a);
+    int count_b = vector_size(params_b);
+
+    if (count_a != count_b) {
+        return false;
+    }
+
+    for (int i = 0; i < count_a; i++) {
+        TypeData* type_a = TypeData_of(params_a[i]);
+        TypeData* type_b = TypeData_of(params_b[i]);
+
+        if (!TypeData_match(type_a, type_b)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void semantic_function_overload_declaration(Ast* node, Scope* scope) {
+    if (node->symbol && node->symbol->declaration) return;
+
+    const char* overload_name = identifier_name(node->function_overload_declaration.name);
+    if (!overload_name) return;
+
+    Ast* existing = find_declaration(overload_name, scope, true, NULL, NULL);
+    if (existing && existing != node && !is_file_local_duplicate(existing, node)) {
+        DUPLICATE_NAME_ERROR(node->source, overload_name);
+        return;
+    }
+    if (!existing) {
+        scope_add(scope, node);
+        node->scope = scope;
+    }
+    node->symbol = Symbol_create(overload_name, NULL, NULL);
+
+    Ast** stmts = node->function_overload_declaration.body->block.statements;
+    int count = vector_size(stmts);
+
+    Ast** functions = vector_create();
+
+    for (int i = 0; i < count; i++) {
+        Ast* stmt = stmts[i];
+        const char* name = identifier_name(stmt);
+
+        if (!name) {
+            INVALID_MEMBER_NAME_ERROR(stmt->source);
+            continue;
+        }
+
+        Ast* decl = find_declaration(name, scope, true, &stmt->source, NULL);
+
+        if (decl == NULL) {
+            UNDECLARED_NAME_ERROR(stmt->source, name);
+            continue;
+        }
+
+        if (decl->type != AST_FUNCTION_DECLARATION &&
+            decl->type != AST_FUNCTION_DEFINITION) {
+            INVALID_OVERLOAD_FUNCTION_ERROR(stmt->source, name);
+            continue;
+        }
+        
+        stmt->symbol = Symbol_create(name, TypeData_of(decl), decl);
+        vector_add(&functions, decl);
+    }
+
+    if (vector_size(functions) == 0) {
+        EMPTY_OVERLOAD_SET_ERROR(node->source);
+        node->symbol->declaration = node;
+        return;
+    }
+
+    for (int i = 0; i < vector_size(functions); i++) {
+        for (int n = i + 1; n < vector_size(functions); n++) {
+            if (function_parameters_match(functions[i], functions[n])) {
+                DUPLICATE_OVERLOAD_ERROR(functions[n]->source, identifier_name(functions[n]));
+            }
+        }
+    }
+
+    node->symbol->declaration = functions[0];
+}
+
 void semantic_call_expression(Ast* node, Scope* scope) {
     Ast* callee = node->call_expression.callee;
+    bool is_selector = (callee->type == AST_SELECTOR_EXPRESSION);
+
     Ast* decl = NULL;
     const char* callee_name = NULL;
     TypeData* indirect_td = NULL;
 
-    if (callee->type == AST_SELECTOR_EXPRESSION) {
+    if (is_selector) {
         if (!callee->symbol) {
             semantic_expression(callee, scope, TypeData_typeinv());
         }
@@ -1572,9 +1702,7 @@ void semantic_call_expression(Ast* node, Scope* scope) {
             }
         }
 
-        if (callee->symbol && decl != NULL &&
-            decl->type != AST_FUNCTION_DECLARATION &&
-            decl->type != AST_FUNCTION_DEFINITION &&
+        if (decl && !is_function_node(decl) &&
             is_function_type(callee->symbol->type)) {
             indirect_td = callee->symbol->type;
         }
@@ -1582,9 +1710,8 @@ void semantic_call_expression(Ast* node, Scope* scope) {
 
     if (!decl) {
         callee_name = identifier_name(callee);
-        decl = find_declaration(callee_name, scope, 1, &node->source, NULL);
-        if (decl && decl->type != AST_FUNCTION_DECLARATION &&
-            decl->type != AST_FUNCTION_DEFINITION &&
+        decl = find_declaration(callee_name, scope, true, &node->source, NULL);
+        if (decl && !is_function_node(decl) &&
             decl->symbol && is_function_type(decl->symbol->type)) {
             indirect_td = decl->symbol->type;
         }
@@ -1596,42 +1723,114 @@ void semantic_call_expression(Ast* node, Scope* scope) {
     }
     decl = resolve_function_alias(decl);
 
-    if (!decl || decl->type == AST_FUNCTION_ALIAS) {
-        UNDECLARED_NAME_ERROR(node->source, callee_name ? callee_name : "unknown");
-        return;
-    }
-
-    if (!decl || (decl->type != AST_FUNCTION_DECLARATION &&
-                  decl->type != AST_FUNCTION_DEFINITION  &&
-                  decl->type != AST_STRUCT_DECLARATION &&
-                  indirect_td == NULL)) {
-        UNDECLARED_NAME_ERROR(node->source, callee_name ? callee_name : "unknown");
+    if (resolve_struct_type_decl(decl)) {
+        STRUCT_NOT_CALLABLE_ERROR(node->source, callee_name ? callee_name : "unknown");
         return;
     }
 
     bool is_indirect = (indirect_td != NULL);
-    bool is_struct = !is_indirect && (decl->type == AST_STRUCT_DECLARATION);
 
-    if (scope_is_global(scope) && !is_struct) {
+    if (!decl || decl->type == AST_FUNCTION_ALIAS ||
+        (!is_function_node(decl) && !is_indirect)) {
+        UNDECLARED_NAME_ERROR(node->source, callee_name ? callee_name : "unknown");
+        return;
+    }
+
+    bool is_function = !is_indirect && is_function_node(decl) &&
+                       decl->type != AST_FUNCTION_OVERLOAD_DECLARATION;
+    bool is_overload = decl->type == AST_FUNCTION_OVERLOAD_DECLARATION;
+
+    if (scope_is_global(scope)) {
         GLOBAL_FUNCTION_CALL_ERROR(node->source, identifier_name(node));
         return;
     }
 
     Ast** expected_args;
     size_t expected_count;
-    bool has_ellipsis;
+    bool has_ellipsis = false;
     TypeData* call_result_td;
 
-    if (is_indirect) {
-        expected_args  = NULL;
-        expected_count = indirect_td->function.param_count;
-        has_ellipsis   = false;
-        call_result_td = indirect_td->function.return_type;
-    } else if (is_struct) {
-        expected_args  = decl->struct_declaration.fields;
-        expected_count = vector_size(expected_args);
+    if (is_overload) {
+        Ast** call_args = node->call_expression.arguments;
+        size_t call_args_count = vector_size(call_args);
+
+        /* Analyze the arguments first so their types are known for matching. */
+        for (size_t i = 0; i < call_args_count; i++) {
+            semantic_expression(call_args[i], scope, TypeData_typeinv());
+        }
+
+        if (decl->symbol == NULL || decl->symbol->declaration == NULL) {
+            semantic_function_overload_declaration(decl, global_scope);
+        }
+
+        Ast** functions       = decl->function_overload_declaration.body->block.statements;
+        int   functions_count = vector_size(functions);
+
+        decl = NULL;
+        for (int i = 0; i < functions_count; i++) {
+            Ast* candidate = (functions[i] && functions[i]->symbol)
+                ? functions[i]->symbol->declaration : NULL;
+
+            if (!candidate ||
+                (candidate->type != AST_FUNCTION_DECLARATION &&
+                 candidate->type != AST_FUNCTION_DEFINITION)) {
+                continue;
+            }
+
+            Ast** params = candidate->function_declaration.params;
+            size_t param_count = params ? vector_size(params) : 0;
+            if (param_count != call_args_count) continue;
+
+            bool is_match = true;
+            for (size_t k = 0; k < param_count; k++) {
+                TypeData* param_td = TypeData_of(params[k]);
+                Ast* arg = call_args[k];
+
+                /* An exact type match always wins. Otherwise an untyped
+                   literal adapts to the parameter's type so `f(1)` can
+                   select `f(x: u8)`. */
+                if (!TypeData_match(TypeData_of(arg), param_td)) {
+                    bool literal_adapts = false;
+
+                    if (param_td->pointer_depth == 0 && is_numeric_type(param_td)) {
+                        if (arg->type == AST_LITERAL_INTEGER && is_integer_type(param_td)) {
+                            long value;
+                            literal_adapts = eval_constant_integer(arg, &value) &&
+                                             check_value_fits_target(value, param_td->base);
+                        } else if (arg->type == AST_LITERAL_FLOAT && is_float_type(param_td)) {
+                            literal_adapts = true;
+                        }
+                    }
+                    if (!literal_adapts && arg->type == AST_LITERAL_NIL &&
+                        (is_pointer_type(param_td) || is_function_type(param_td))) {
+                        literal_adapts = true;
+                    }
+
+                    if (!literal_adapts) {
+                        is_match = false;
+                        break;
+                    }
+                }
+            }
+            if (is_match) decl = candidate;
+        }
+
+        if (decl == NULL) {
+            NO_MATCHING_FUNCTION_OVERLOAD_ERROR(node->source, callee_name ? callee_name : "unknown");
+            return;
+        }
+
+        is_function    = true;
+        expected_args  = decl->function_declaration.params;
+        expected_count = expected_args ? vector_size(expected_args) : 0;
         has_ellipsis   = false;
         call_result_td = decl->symbol->type;
+    }
+
+    else if (is_indirect) {
+        expected_args  = NULL;
+        expected_count = indirect_td->function.param_count;
+        call_result_td = indirect_td->function.return_type;
     } else {
         expected_args  = decl->function_declaration.params;
         expected_count = vector_size(expected_args);
@@ -1642,13 +1841,9 @@ void semantic_call_expression(Ast* node, Scope* scope) {
     Ast** call_args = node->call_expression.arguments;
     size_t call_args_count = vector_size(call_args);
 
-    if (call_args_count < expected_count || (!has_ellipsis && call_args_count > expected_count)) {
-        if (is_struct) {
-            STRUCT_EXPRESSION_VALUE_COUNT_ERROR(node->source, callee_name,
-                call_args_count < expected_count, expected_count, call_args_count);
-        } else {
-            FUNCTION_ARGUMENT_COUNT_ERROR(node->source, callee_name, expected_count, call_args_count);
-        }
+    if (call_args_count < expected_count ||
+        (!has_ellipsis && call_args_count > expected_count)) {
+        FUNCTION_ARGUMENT_COUNT_ERROR(node->source, callee_name, expected_count, call_args_count);
         return;
     }
 
@@ -1679,24 +1874,26 @@ void semantic_call_expression(Ast* node, Scope* scope) {
     }
 
     assert(decl->symbol);
-    if (!is_struct && !is_indirect &&
-        (decl->type == AST_FUNCTION_DECLARATION || decl->type == AST_FUNCTION_DEFINITION)) {
+    
+    if (is_function) {
         decl->function_declaration.is_called = true;
     }
 
-    const char* sym_name = (callee->type == AST_SELECTOR_EXPRESSION) ? callee_name : identifier_name(decl);
+    const char* sym_name = is_selector ? callee_name : identifier_name(decl);
     Symbol* sym = Symbol_create(sym_name ? sym_name : callee_name, call_result_td, decl);
     sym->declaration = decl;
 
     node->symbol = sym;
     if (is_indirect) {
-        if (callee->type != AST_SELECTOR_EXPRESSION && callee->symbol == NULL) {
+        if (!is_selector && callee->symbol == NULL) {
             semantic_expression(callee, scope, indirect_td);
         }
     } else {
         callee->symbol = sym;
     }
+
 }
+
 static int private_struct_counter = 0;
 
 static void semantic_struct_declaration(Ast* node, Scope* scope) {
@@ -1970,6 +2167,8 @@ void semantic_selector_expression(Ast* node, Scope* scope) {
                 identifier_name(obj_decl->enum_declaration.name),
                 member_name
             );
+            node->symbol = Symbol_create(NULL, TypeData_typeinv(), node);
+            return;
         }
     }
 
@@ -1983,12 +2182,16 @@ void semantic_selector_expression(Ast* node, Scope* scope) {
             node->source,
             TypeData_to_string(object_td)
         );
+        node->symbol = Symbol_create(NULL, TypeData_typeinv(), node);
+        return;
     }
 
     StructDef* struct_def = object_td->struct_def;
 
     if (!struct_def) {
         INVALID_STRUCT_ERROR(node->source);
+        node->symbol = Symbol_create(NULL, TypeData_typeinv(), node);
+        return;
     }
 
     if (!struct_def->fields) {
@@ -1996,10 +2199,14 @@ void semantic_selector_expression(Ast* node, Scope* scope) {
             node->source,
             struct_def->name
         );
+        node->symbol = Symbol_create(NULL, TypeData_typeinv(), node);
+        return;
     }
 
     if (!member_name) {
         INVALID_MEMBER_NAME_ERROR(node->source);
+        node->symbol = Symbol_create(NULL, TypeData_typeinv(), node);
+        return;
     }
 
     const StructField* field = NULL;
@@ -2018,6 +2225,8 @@ void semantic_selector_expression(Ast* node, Scope* scope) {
             member_name,
             struct_def->name
         );
+        node->symbol = Symbol_create(NULL, TypeData_typeinv(), node);
+        return;
     }
 
     node->selector_expression.field_index = field->index;
@@ -2523,12 +2732,7 @@ void semantic_expression(Ast* node, Scope* scope, TypeData* expected_type) {
     }
 }
 
-// A `using` written without '=' has a target the parser could not classify:
-// it may name a type or a function. At this point every enum and struct is
-// already declared and no function is, so a target that resolves to a type is
-// a type alias and anything else must be a function alias. Selectors are
-// always function references (`Ext.foo`), since a bare member cannot be
-// resolved this early.
+
 static bool using_target_is_type(Ast* target, Scope* scope) {
     if (!target) return false;
     if (target->type == AST_SELECTOR_EXPRESSION) return false;
@@ -2544,14 +2748,11 @@ static bool using_target_is_type(Ast* target, Scope* scope) {
                     decl->type == AST_USING_DECLARATION);
 }
 
-// Retype an ambiguous `using` into a function alias. `using_declaration` and
-// `function_alias` share the same layout for the name and target pointers, so
-// the parsed fields carry over untouched.
+
 static void retype_using_as_function_alias(Ast* node) {
     node->type = AST_FUNCTION_ALIAS;
 }
 
-// Classify a single `using Name Target` declaration, if it is still ambiguous.
 static void resolve_using_declaration_kind(Ast* node, Scope* scope) {
     if (!node || node->type != AST_USING_DECLARATION) return;
     if (!node->using_declaration.ambiguous) return;
@@ -2626,6 +2827,14 @@ void semantic_statement(Ast* node, Scope* scope) {
         
         case AST_FUNCTION_DEFINITION:
             semantic_function_declaration(node, scope);
+            break;
+
+        case AST_FUNCTION_OVERLOAD_DECLARATION:
+            if (scope_is_global(scope)) {
+                semantic_function_overload_declaration(node, scope);
+            } else {
+                NON_GLOBAL_STATEMENT_ERROR(node->source, identifier_name(node));
+            }
             break;
 
         case AST_FUNCTION_ALIAS:
@@ -2747,6 +2956,15 @@ static void declare_vars_funcs_recursive(Ast* root, Scope* scope) {
 
 }
 
+static void declare_overloads_recursive(Ast* root, Scope* scope) {
+    if (!root || !root->block.statements) return;
+    for (size_t i = 0; i < vector_size(root->block.statements); i++) {
+        Ast* stmt = root->block.statements[i];
+        if (!stmt || stmt->type != AST_FUNCTION_OVERLOAD_DECLARATION) continue;
+        semantic_function_overload_declaration(stmt, scope);
+    }
+}
+
 static void resolve_aliases_recursive(Ast* root, Scope* scope, int* changed) {
     if (!root || !root->block.statements) return;
     for (size_t i = 0; i < vector_size(root->block.statements); i++) {
@@ -2795,9 +3013,8 @@ static void define_bodies_recursive(Ast* root, Scope* scope) {
         if (!stmt) continue;
         if (stmt->type == AST_FUNCTION_DEFINITION) {
             semantic_function_body(stmt, scope);
-        } else if (stmt->type == AST_STRUCT_DECLARATION) {
-            continue;
-        } else if (scope_is_global(scope)) {
+        } 
+        else if (scope_is_global(scope)) {
             switch (stmt->type) {
                 case AST_IDENTIFIER:
                     GLOBAL_STATEMENT_ERROR(stmt->source, identifier_name(stmt));
@@ -2828,7 +3045,7 @@ static void define_bodies_recursive(Ast* root, Scope* scope) {
 
 void semantic(Ast *root, Ast** builtin) {
 
-    Scope* global_scope = scope_create(NULL);
+    global_scope = scope_create(NULL);
     for (size_t i = 0; i < vector_size(builtin); i++) {
         semantic_statement(builtin[i], global_scope);
     }
@@ -2837,6 +3054,7 @@ void semantic(Ast *root, Ast** builtin) {
     declare_structs_recursive(root, global_scope);
     declare_usings_recursive(root, global_scope);
     declare_vars_funcs_recursive(root, global_scope);
+    declare_overloads_recursive(root, global_scope);
     resolve_aliases_fixpoint(root, global_scope);
     define_bodies_recursive(root, global_scope);
 

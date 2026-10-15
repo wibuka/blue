@@ -10,6 +10,7 @@ typedef enum {
 
     AST_NAMESPACE,
 
+    AST_FUNCTION_OVERLOAD_DECLARATION,
     AST_FUNCTION_DECLARATION,
     AST_FUNCTION_DEFINITION,
     AST_FUNCTION_ALIAS,
@@ -120,6 +121,11 @@ typedef struct Ast {
             Ast* type;
             int  index;
         } field_declaration;
+        
+        struct {
+            Ast* name;
+            Ast* body;
+        } function_overload_declaration;
 
         struct {
             Ast*  name;
@@ -370,6 +376,10 @@ static inline int is_nil_literal(Ast* expr) {
 }
 
 static inline int is_function_node(Ast* node) {
-    return node != NULL && (node->type == AST_FUNCTION_DEFINITION || node->type == AST_FUNCTION_DECLARATION);
+    return node != NULL && (
+            node->type == AST_FUNCTION_DEFINITION  || 
+            node->type == AST_FUNCTION_DECLARATION ||
+            node->type == AST_FUNCTION_OVERLOAD_DECLARATION 
+    );
 }
 

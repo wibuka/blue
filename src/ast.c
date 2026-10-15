@@ -55,6 +55,8 @@ const char* identifier_name(Ast* node) {
         case AST_FUNCTION_DECLARATION:
         case AST_FUNCTION_ALIAS:
             return identifier_name(node->function_declaration.name);
+        case AST_FUNCTION_OVERLOAD_DECLARATION:
+            return identifier_name(node->function_overload_declaration.name);
         case AST_STRUCT_DECLARATION:
             return identifier_name(node->struct_declaration.name);
         case AST_ENUM_DECLARATION:

@@ -2,50 +2,51 @@
 
 const char *ast_type_name(AstType type) {
     switch (type) {
-        case AST_ROOT:                  return "ROOT";
-        case AST_LITERAL_INTEGER:       return "LITERAL_INTEGER";
-        case AST_LITERAL_FLOAT:         return "LITERAL_FLOAT";
-        case AST_LITERAL_STRING:        return "LITERAL_STRING";
-        case AST_LITERAL_CHAR:          return "LITERAL_CHAR";
-        case AST_LITERAL_BOOLEAN:       return "LITERAL_BOOLEAN";
-        case AST_LITERAL_NIL:           return "LITERAL_NIL";
-        case AST_LITERAL_ARRAY:         return "LITERAL_ARRAY";
-        case AST_LITERAL_COMPOUND:      return "LITERAL_COMPOUND";
-        case AST_LITERAL_HEXADECIMAL:   return "LITERAL_HEXADECIMAL";
-        case AST_LITERAL_BINARY:        return "LITERAL_BINARY";
-        case AST_VARIABLE_DECLARATION:  return "VARIABLE_DECLARATION";
-        case AST_FUNCTION_DECLARATION:  return "FUNCTION_DECLARATION";
-        case AST_FUNCTION_DEFINITION:   return "FUNCTION_DEFINITION";
-        case AST_FUNCTION_ALIAS:        return "FUNCTION_ALIAS";
-        case AST_PARAMETER_DECLARATION: return "PARAMETER_DECLARATION";
-        case AST_FIELD_DECLARATION:     return "FIELD_DECLARATION";
-        case AST_STRUCT_DECLARATION:    return "STRUCT_DECLARATION";
-        case AST_ASSIGNMENT_EXPRESSION: return "ASSIGNMENT_EXPRESSION";
-        case AST_INDEX_EXPRESSION:      return "INDEX_EXPRESSION";
-        case AST_BINARY_EXPRESSION:     return "BINARY_EXPRESSION";
-        case AST_UNARY_EXPRESSION:      return "UNARY_EXPRESSION";
-        case AST_POSTFIX_EXPRESSION:    return "POSTFIX_EXPRESSION";
-        case AST_SELECTOR_EXPRESSION:   return "SELECTOR_EXPRESSION";
-        case AST_CALL_EXPRESSION:       return "CALL_EXPRESSION";
-        case AST_CAST_EXPRESSION:       return "CAST_EXPRESSION";
-        case AST_RANGE_EXPRESSION:      return "RANGE_EXPRESSION";
-        case AST_IMPORT_STATEMENT:      return "IMPORT";
-        case AST_USING_DECLARATION:     return "USING";
-        case AST_IF_STATEMENT:          return "IF";
-        case AST_LOOP_STATEMENT:        return "LOOP";
-        case AST_BLOCK_STATEMENT:       return "BLOCK";
-        case AST_RETURN_STATEMENT:      return "RETURN";
-        case AST_CONTINUE_STATEMENT:    return "CONTINUE";
-        case AST_BREAK_STATEMENT:       return "BREAK";
-        case AST_GOTO_STATEMENT:        return "GOTO";
-        case AST_LABEL_STATEMENT:       return "LABEL";
-        case AST_STAR_EXPRESSION:       return "STAR";
-        case AST_ARRAY_TYPE:            return "ARRAY_TYPE";
-        case AST_SLICE_TYPE:            return "SLICE_TYPE";
-        case AST_FUNCTION_TYPE:         return "FUNCTION_TYPE";
-        case AST_POLYMORPHIC:           return "POLYMORPHIC";
-        case AST_IDENTIFIER:            return "IDENTIFIER";
-        default:                        return "UNKNOWN";
+        case AST_ROOT:                          return "ROOT";
+        case AST_LITERAL_INTEGER:               return "LITERAL_INTEGER";
+        case AST_LITERAL_FLOAT:                 return "LITERAL_FLOAT";
+        case AST_LITERAL_STRING:                return "LITERAL_STRING";
+        case AST_LITERAL_CHAR:                  return "LITERAL_CHAR";
+        case AST_LITERAL_BOOLEAN:               return "LITERAL_BOOLEAN";
+        case AST_LITERAL_NIL:                   return "LITERAL_NIL";
+        case AST_LITERAL_ARRAY:                 return "LITERAL_ARRAY";
+        case AST_LITERAL_COMPOUND:              return "LITERAL_COMPOUND";
+        case AST_LITERAL_HEXADECIMAL:           return "LITERAL_HEXADECIMAL";
+        case AST_LITERAL_BINARY:                return "LITERAL_BINARY";
+        case AST_VARIABLE_DECLARATION:          return "VARIABLE_DECLARATION";
+        case AST_FUNCTION_OVERLOAD_DECLARATION: return "FUNCTION_OVERLOADING";
+        case AST_FUNCTION_DECLARATION:          return "FUNCTION_DECLARATION";
+        case AST_FUNCTION_DEFINITION:           return "FUNCTION_DEFINITION";
+        case AST_FUNCTION_ALIAS:                return "FUNCTION_ALIAS";
+        case AST_PARAMETER_DECLARATION:         return "PARAMETER_DECLARATION";
+        case AST_FIELD_DECLARATION:             return "FIELD_DECLARATION";
+        case AST_STRUCT_DECLARATION:            return "STRUCT_DECLARATION";
+        case AST_ASSIGNMENT_EXPRESSION:         return "ASSIGNMENT_EXPRESSION";
+        case AST_INDEX_EXPRESSION:              return "INDEX_EXPRESSION";
+        case AST_BINARY_EXPRESSION:             return "BINARY_EXPRESSION";
+        case AST_UNARY_EXPRESSION:              return "UNARY_EXPRESSION";
+        case AST_POSTFIX_EXPRESSION:            return "POSTFIX_EXPRESSION";
+        case AST_SELECTOR_EXPRESSION:           return "SELECTOR_EXPRESSION";
+        case AST_CALL_EXPRESSION:               return "CALL_EXPRESSION";
+        case AST_CAST_EXPRESSION:               return "CAST_EXPRESSION";
+        case AST_RANGE_EXPRESSION:              return "RANGE_EXPRESSION";
+        case AST_IMPORT_STATEMENT:              return "IMPORT";
+        case AST_USING_DECLARATION:             return "USING";
+        case AST_IF_STATEMENT:                  return "IF";
+        case AST_LOOP_STATEMENT:                return "LOOP";
+        case AST_BLOCK_STATEMENT:               return "BLOCK";
+        case AST_RETURN_STATEMENT:              return "RETURN";
+        case AST_CONTINUE_STATEMENT:            return "CONTINUE";
+        case AST_BREAK_STATEMENT:               return "BREAK";
+        case AST_GOTO_STATEMENT:                return "GOTO";
+        case AST_LABEL_STATEMENT:               return "LABEL";
+        case AST_STAR_EXPRESSION:               return "STAR";
+        case AST_ARRAY_TYPE:                    return "ARRAY_TYPE";
+        case AST_SLICE_TYPE:                    return "SLICE_TYPE";
+        case AST_FUNCTION_TYPE:                 return "FUNCTION_TYPE";
+        case AST_POLYMORPHIC:                   return "POLYMORPHIC";
+        case AST_IDENTIFIER:                    return "IDENTIFIER";
+        default:                                return "UNKNOWN";
     }
 }
 
@@ -220,6 +221,10 @@ static cJSON *ast_to_json(Ast *node) {
             cJSON_AddItemToObject(obj, "paramType", ast_to_json(node->parameter_declaration.type));
             break;
         }
+        case AST_FUNCTION_OVERLOAD_DECLARATION:
+            cJSON_AddItemToObject(obj, "name", ast_to_json(node->function_overload_declaration.name));
+            cJSON_AddItemToObject(obj, "body", ast_to_json(node->function_overload_declaration.body));
+            break;
         case AST_FUNCTION_DECLARATION:
         case AST_FUNCTION_DEFINITION: {
             cJSON_AddItemToObject(obj, "name", ast_to_json(node->function_declaration.name));

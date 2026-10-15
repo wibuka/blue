@@ -1464,6 +1464,47 @@ Ast* parser_variable_declaration() {
     return variable_node;
 }
 
+static Ast* parser_function_overload_declaration(Ast* node) {
+    Ast* overload  = node;
+    overload->type = AST_FUNCTION_OVERLOAD_DECLARATION; 
+
+    Ast** names = vector_create();
+
+    while (!token_is(token_current(), "}")) {
+        if (token_current().type != TOKEN_IDENTIFIER) {
+            log_source_error(
+                token_current().source,
+                ERROR_SYNTAX,
+                "Expected function name"
+            );
+            return NULL;
+        }
+
+        Ast* identifier = Ast_create(AST_IDENTIFIER);
+        identifier->source = token_current().source;
+        identifier->identifier.name = token_current().data;
+
+        vector_add(&names, identifier);
+
+        token_next();
+        if (token_is(token_current(), ";")) {
+            token_next();
+        }
+        else if (!parser.newline) {
+            log_source_error(token_current().source, ERROR_SYNTAX, "Expected ';'");
+        }
+    }
+
+    token_next();
+
+    Ast* body = Ast_create(AST_BLOCK_STATEMENT);
+    body->block.statements = names;
+
+    overload->function_overload_declaration.body = body;
+
+    return overload;
+}
+
 Ast* parser_function_declaration() {
     SourceSite keyword_site = token_current().source;
 
@@ -1485,6 +1526,9 @@ Ast* parser_function_declaration() {
         log_source_error(tok_function_name.source, ERROR_SYNTAX, "Invalid function identifier");
     }
 
+    /* Assigned before the overload-set dispatch below, which returns early. */
+    function->function_declaration.name = function_name;
+
     token_next();
 
     if (token_is(token_current(), "=")) {
@@ -1494,11 +1538,17 @@ Ast* parser_function_declaration() {
     }
 
     Ast** function_params = vector_create();
-    
-    if (!token_is(token_current(), "(")) {
-        log_source_error(token_current().source, ERROR_SYNTAX, "Expected '('");
+
+    if (token_is(token_current(), "{")) {
+        token_next();
+        return parser_function_overload_declaration(function);
     }
-    token_next();
+    else if (token_is(token_current(), "(")) {
+        token_next();
+    }
+    else {
+        log_source_error(token_current().source, ERROR_SYNTAX, "Expected '(' or '{'");
+    }
 
     int has_ellipsis = 0;
 
