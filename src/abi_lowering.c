@@ -11,7 +11,9 @@ static LLVMTypeRef pointer_to_for_module(LLVMModuleRef module, LLVMTypeRef hint)
 
 LLVMTypeRef abi_chunk_type(LLVMTypeRef elem, const AbiChunkInfo* chunk) {
     LLVMContextRef ctx = LLVMGetTypeContext(elem);
-    (void)chunk;
+    if (chunk && chunk->type) {
+        return chunk->type;
+    }
     if (LLVMGetTypeKind(elem) == LLVMFloatTypeKind) {
         return LLVMFloatTypeInContext(ctx);
     }
@@ -27,6 +29,52 @@ LLVMTypeRef abi_chunk_type(LLVMTypeRef elem, const AbiChunkInfo* chunk) {
     if (sz <= 2)  return LLVMInt16TypeInContext(ctx);
     if (sz <= 4)  return LLVMInt32TypeInContext(ctx);
     return LLVMInt64TypeInContext(ctx);
+}
+
+LLVMValueRef abi_coerce_value(LLVMBuilderRef builder, LLVMTypeRef to, LLVMValueRef value) {
+    if (!value || !to) return value;
+
+    LLVMTypeRef from = LLVMTypeOf(value);
+    if (from == to) return value;
+
+    LLVMTypeKind from_kind = LLVMGetTypeKind(from);
+    LLVMTypeKind to_kind   = LLVMGetTypeKind(to);
+
+    if (from_kind == LLVMPointerTypeKind && to_kind == LLVMPointerTypeKind) {
+        return LLVMBuildBitCast(builder, value, to, "");
+    }
+    if (from_kind == LLVMPointerTypeKind && to_kind == LLVMIntegerTypeKind) {
+        return LLVMBuildPtrToInt(builder, value, to, "");
+    }
+    if (from_kind == LLVMIntegerTypeKind && to_kind == LLVMPointerTypeKind) {
+        return LLVMBuildIntToPtr(builder, value, to, "");
+    }
+    if (from_kind == LLVMIntegerTypeKind && to_kind == LLVMIntegerTypeKind) {
+        unsigned from_bits = LLVMGetIntTypeWidth(from);
+        unsigned to_bits   = LLVMGetIntTypeWidth(to);
+        if (from_bits < to_bits) return LLVMBuildZExt(builder, value, to, "");
+        if (from_bits > to_bits) return LLVMBuildTrunc(builder, value, to, "");
+        return value;
+    }
+    if ((from_kind == LLVMFloatTypeKind || from_kind == LLVMDoubleTypeKind) &&
+        (to_kind == LLVMFloatTypeKind || to_kind == LLVMDoubleTypeKind)) {
+        if (from_kind == LLVMFloatTypeKind && to_kind == LLVMDoubleTypeKind) {
+            return LLVMBuildFPExt(builder, value, to, "");
+        }
+        if (from_kind == LLVMDoubleTypeKind && to_kind == LLVMFloatTypeKind) {
+            return LLVMBuildFPTrunc(builder, value, to, "");
+        }
+        return value;
+    }
+    if ((from_kind == LLVMFloatTypeKind || from_kind == LLVMDoubleTypeKind) &&
+        to_kind == LLVMIntegerTypeKind) {
+        return LLVMBuildBitCast(builder, value, to, "");
+    }
+    if (from_kind == LLVMIntegerTypeKind &&
+        (to_kind == LLVMFloatTypeKind || to_kind == LLVMDoubleTypeKind)) {
+        return LLVMBuildBitCast(builder, value, to, "");
+    }
+    return value;
 }
 
 LLVMTypeRef abi_ir_return_type(LLVMContextRef ctx, const AbiInfo* info) {
@@ -104,7 +152,12 @@ AbiValue abi_extract_chunks_from_value(LLVMBuilderRef builder, LLVMModuleRef mod
             int can_extract = 1;
             for (int i = 0; i < info->chunk_count; i++) {
                 uint64_t field_off = LLVMOffsetOfElement(td, struct_ty, i);
-                if (field_off != info->chunks[i].offset) { can_extract = 0; break; }
+                LLVMTypeRef field_ty = LLVMStructGetTypeAtIndex(struct_ty, i);
+                LLVMTypeRef chunk_ty = abi_chunk_type(struct_ty, &info->chunks[i]);
+                if (field_off != info->chunks[i].offset || field_ty != chunk_ty) {
+                    can_extract = 0;
+                    break;
+                }
             }
             if (can_extract) {
                 for (int i = 0; i < info->chunk_count; i++) {
@@ -170,14 +223,16 @@ LLVMValueRef abi_rebuild_struct(LLVMBuilderRef builder, LLVMModuleRef module, LL
         LLVMValueRef addr = abi_chunk_address(builder, module, struct_ty, slot, info->chunks[0].offset);
         LLVMTypeRef pt = pointer_to_for_module(module, cty);
         addr = LLVMBuildBitCast(builder, addr, pt, "");
-        LLVMBuildStore(builder, input->chunks[0], addr);
+        LLVMValueRef value = abi_coerce_value(builder, cty, input->chunks[0]);
+        if (value) LLVMBuildStore(builder, value, addr);
     } else {
         for (int i = 0; i < info->chunk_count && i < 4; i++) {
             LLVMTypeRef cty = abi_chunk_type(struct_ty, &info->chunks[i]);
             LLVMValueRef addr = abi_chunk_address(builder, module, struct_ty, slot, info->chunks[i].offset);
             LLVMTypeRef pt = pointer_to_for_module(module, cty);
             addr = LLVMBuildBitCast(builder, addr, pt, "");
-            LLVMBuildStore(builder, input->chunks[i], addr);
+            LLVMValueRef value = abi_coerce_value(builder, cty, input->chunks[i]);
+            if (value) LLVMBuildStore(builder, value, addr);
         }
     }
     return LLVMBuildLoad2(builder, struct_ty, slot, "");

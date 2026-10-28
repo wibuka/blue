@@ -118,7 +118,29 @@ static void chunk_add(AbiInfo* info, uint64_t offset, uint64_t size, bool is_flo
     info->chunks[info->chunk_count].offset   = offset;
     info->chunks[info->chunk_count].size     = size;
     info->chunks[info->chunk_count].is_float = is_float;
+    info->chunks[info->chunk_count].type     = NULL;
     info->chunk_count++;
+}
+
+static void assign_chunk_field_types(LLVMTypeRef type, AbiInfo* info) {
+    if (!target_data || !type || info->chunk_count <= 0) return;
+
+    unsigned n = LLVMCountStructElementTypes(type);
+    for (int c = 0; c < info->chunk_count; c++) {
+        AbiChunkInfo* chunk = &info->chunks[c];
+        if (chunk->is_float) continue;
+
+        for (unsigned i = 0; i < n; i++) {
+            if (LLVMOffsetOfElement(target_data, type, i) != chunk->offset) continue;
+
+            LLVMTypeRef field = LLVMStructGetTypeAtIndex(type, i);
+            if (!field || LLVMGetTypeKind(field) != LLVMPointerTypeKind) break;
+            if (LLVMABISizeOfType(target_data, field) != chunk->size) break;
+
+            chunk->type = field;
+            break;
+        }
+    }
 }
 
 static unsigned g_sysv_class[2];
@@ -374,6 +396,7 @@ AbiInfo abi_analyze(LLVMContextRef ctx, LLVMTypeRef type) {
             classify_sysv_amd64(type, &info);
             break;
     }
+    assign_chunk_field_types(type, &info);
     return info;
 }
 

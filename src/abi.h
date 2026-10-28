@@ -23,9 +23,10 @@ typedef enum {
 } AbiClass;
 
 typedef struct AbiChunkInfo {
-    uint64_t offset;
-    uint64_t size;
-    bool     is_float;
+    uint64_t    offset;
+    uint64_t    size;
+    bool        is_float;
+    LLVMTypeRef type;
 } AbiChunkInfo;
 
 typedef struct AbiInfo {
@@ -58,6 +59,7 @@ bool abi_is_sret(LLVMContextRef ctx, LLVMTypeRef type);
 
 LLVMTypeRef abi_chunk_type(LLVMTypeRef elem, const AbiChunkInfo *chunk);
 LLVMTypeRef abi_ir_return_type(LLVMContextRef ctx, const AbiInfo *info);
+LLVMValueRef abi_coerce_value(LLVMBuilderRef builder, LLVMTypeRef to, LLVMValueRef value);
 
 typedef struct AbiValue {
     LLVMValueRef chunks[4];
