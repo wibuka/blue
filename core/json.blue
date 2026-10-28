@@ -1,0 +1,779 @@
+import "core/libc"
+
+let JSON_integer_type = 1
+let JSON_float_type   = 2
+let JSON_string_type  = 3
+let JSON_boolean_type = 4
+let JSON_null_type    = 5
+let JSON_object_type  = 6
+let JSON_array_type   = 7
+
+struct JSON_JsonValue {
+    type: i32
+    data: *u0
+}
+
+@private
+struct Token {
+    size: usize
+    data: *u8
+}
+
+@private
+struct JSON_Object {
+    count : usize
+    keys  : **u8
+    values: **JSON_JsonValue
+}
+
+@private
+struct JSON_Array {
+    count : usize
+    values: **JSON_JsonValue
+}
+
+@private
+struct JSON_Parser {
+    text  : *u8
+    index : usize
+    length: usize
+}
+
+@private
+def token_is(tk: Token, str: *u8) -> bool {
+    let len = strlen(str)
+    if tk.size != len {
+        return false
+    }
+    return memcmp(tk.data, str, len) == 0
+}
+
+@private
+def JSON_skip_whitespace(parser: *JSON_Parser) {
+    loop {
+        if parser.index >= parser.length break
+        var c = parser.text[parser.index]
+        if c != ' ' and c != '\t' and c != '\n' and c != '\r' {
+            break
+        }
+        parser.index = parser.index + 1
+    }
+}
+
+@private
+def JSON_hex_value(c: u8) -> i32 {
+    if c >= '0' and c <= '9' {
+        return (c as i32) - ('0' as i32)
+    }
+    if c >= 'a' and c <= 'f' {
+        return (c as i32) - ('a' as i32) + 10
+    }
+    if c >= 'A' and c <= 'F' {
+        return (c as i32) - ('A' as i32) + 10
+    }
+    return -1
+}
+
+@private
+def JSON_read_hex4(parser: *JSON_Parser) -> i32 {
+    if parser.index + 4 > parser.length {
+        return -1
+    }
+
+    var value: i32 = 0
+    var i: usize = 0
+
+    loop {
+        if i >= 4 {
+            break
+        }
+
+        let digit = JSON_hex_value(parser.text[parser.index])
+        if digit < 0 {
+            return -1
+        }
+
+        value = value * 16 + digit
+        parser.index = parser.index + 1
+        i = i + 1
+    }
+
+    return value
+}
+
+@private
+def JSON_utf8_write(buffer: *u8, offset: usize, codepoint: i32) -> usize {
+    if codepoint <= 0x7F {
+        buffer[offset] = codepoint as u8
+        return offset + 1
+    }
+
+    if codepoint <= 0x7FF {
+        buffer[offset]     = (0xC0 + codepoint / 64) as u8
+        buffer[offset + 1] = (0x80 + codepoint % 64) as u8
+        return offset + 2
+    }
+
+    if codepoint <= 0xFFFF {
+        buffer[offset]     = (0xE0 + codepoint / 4096) as u8
+        buffer[offset + 1] = (0x80 + (codepoint / 64) % 64) as u8
+        buffer[offset + 2] = (0x80 + codepoint % 64) as u8
+        return offset + 3
+    }
+
+    buffer[offset]     = (0xF0 + codepoint / 262144) as u8
+    buffer[offset + 1] = (0x80 + (codepoint / 4096) % 64) as u8
+    buffer[offset + 2] = (0x80 + (codepoint / 64) % 64) as u8
+    buffer[offset + 3] = (0x80 + codepoint % 64) as u8
+    return offset + 4
+}
+
+@private
+def JSON_parse_value(parser: *JSON_Parser) -> JSON_JsonValue {
+    JSON_skip_whitespace(parser)
+
+    if parser.index >= parser.length {
+        return JSON_JsonValue{0, nil}
+    }
+
+    let c = parser.text[parser.index]
+
+    if c == '{' {
+        return JSON_parse_object(parser)
+    }
+
+    if c == '[' {
+        return JSON_parse_array(parser)
+    }
+
+    if c == '"' {
+        return JSON_parse_string(parser)
+    }
+
+    if c == 't' or c == 'f' {
+        return JSON_parse_boolean(parser)
+    }
+
+    if c == 'n' {
+        return JSON_parse_null(parser)
+    }
+
+    if c == '-' or (c >= '0' and c <= '9') {
+        return JSON_parse_number(parser)
+    }
+
+    return JSON_JsonValue{0, nil}
+}
+
+@private
+def JSON_parse_object(parser: *JSON_Parser) -> JSON_JsonValue {
+    if parser.index >= parser.length or parser.text[parser.index] != '{' {
+        return JSON_JsonValue{0, nil}
+    }
+
+    // Consume '{'.
+    parser.index = parser.index + 1
+
+    var object = malloc(sizeof(JSON_Object)) as *JSON_Object
+    if object == nil {
+        return JSON_JsonValue{0, nil}
+    }
+
+    object.count  = 0
+    object.keys   = nil
+    object.values = nil
+
+    JSON_skip_whitespace(parser)
+
+    // An empty object is valid.
+    if parser.index < parser.length and parser.text[parser.index] == '}' {
+        parser.index = parser.index + 1
+        return JSON_JsonValue{JSON_object_type, object as *u0}
+    }
+
+    loop {
+        JSON_skip_whitespace(parser)
+
+        // Parse the quoted key.
+        if parser.index >= parser.length or parser.text[parser.index] != '"' {
+            return JSON_JsonValue{0, nil}
+        }
+
+        let key_value = JSON_parse_string(parser)
+        if key_value.type != JSON_string_type {
+            return JSON_JsonValue{0, nil}
+        }
+
+        let key = key_value.data as *u8
+
+        // Consume ':'.
+        JSON_skip_whitespace(parser)
+        if parser.index >= parser.length or parser.text[parser.index] != ':' {
+            return JSON_JsonValue{0, nil}
+        }
+        parser.index = parser.index + 1
+
+        // Parse the value.
+        let value = JSON_parse_value(parser)
+        if value.type == 0 {
+            return JSON_JsonValue{0, nil}
+        }
+
+        // Append the key and value.
+        let next_count = object.count + 1
+
+        var keys = realloc(object.keys as *u0, next_count * sizeof(usize)) as **u8
+        if keys == nil {
+            return JSON_JsonValue{0, nil}
+        }
+        object.keys = keys
+
+        var values = realloc(object.values as *u0, next_count * sizeof(usize)) as **JSON_JsonValue
+        if values == nil {
+            return JSON_JsonValue{0, nil}
+        }
+        object.values = values
+
+        var stored_value = malloc(sizeof(JSON_JsonValue)) as *JSON_JsonValue
+        if stored_value == nil {
+            return JSON_JsonValue{0, nil}
+        }
+
+        object.keys[object.count]   = key
+        object.values[object.count] = stored_value
+        *stored_value = value
+        object.count = next_count
+
+        // Consume ',' or '}'.
+        JSON_skip_whitespace(parser)
+        if parser.index >= parser.length {
+            return JSON_JsonValue{0, nil}
+        }
+
+        let c = parser.text[parser.index]
+        if c == ',' {
+            parser.index = parser.index + 1
+            continue
+        }
+
+        if c == '}' {
+            parser.index = parser.index + 1
+            break
+        }
+
+        return JSON_JsonValue{0, nil}
+    }
+
+    return JSON_JsonValue{JSON_object_type, object as *u0}
+}
+
+@private
+def JSON_parse_array(parser: *JSON_Parser) -> JSON_JsonValue {
+    if parser.index >= parser.length or parser.text[parser.index] != '[' {
+        return JSON_JsonValue{0, nil}
+    }
+
+    // Consume '['.
+    parser.index = parser.index + 1
+
+    var array = malloc(sizeof(JSON_Array)) as *JSON_Array
+    if array == nil {
+        return JSON_JsonValue{0, nil}
+    }
+
+    array.count  = 0
+    array.values = nil
+
+    JSON_skip_whitespace(parser)
+
+    // An empty array is valid.
+    if parser.index < parser.length and parser.text[parser.index] == ']' {
+        parser.index = parser.index + 1
+        return JSON_JsonValue{JSON_array_type, array as *u0}
+    }
+
+    loop {
+        // Parse the element.
+        let value = JSON_parse_value(parser)
+        if value.type == 0 {
+            return JSON_JsonValue{0, nil}
+        }
+
+        // Append the element.
+        let next_count = array.count + 1
+
+        var values = realloc(array.values as *u0, next_count * sizeof(usize)) as **JSON_JsonValue
+        if values == nil {
+            return JSON_JsonValue{0, nil}
+        }
+        array.values = values
+
+        var stored_value = malloc(sizeof(JSON_JsonValue)) as *JSON_JsonValue
+        if stored_value == nil {
+            return JSON_JsonValue{0, nil}
+        }
+
+        array.values[array.count] = stored_value
+        *stored_value = value
+        array.count = next_count
+
+        // Consume ',' or ']'.
+        JSON_skip_whitespace(parser)
+        if parser.index >= parser.length {
+            return JSON_JsonValue{0, nil}
+        }
+
+        let c = parser.text[parser.index]
+        if c == ',' {
+            parser.index = parser.index + 1
+            continue
+        }
+
+        if c == ']' {
+            parser.index = parser.index + 1
+            break
+        }
+
+        return JSON_JsonValue{0, nil}
+    }
+
+    return JSON_JsonValue{JSON_array_type, array as *u0}
+}
+
+@private
+def JSON_parse_string(parser: *JSON_Parser) -> JSON_JsonValue {
+    if parser.index >= parser.length or parser.text[parser.index] != '"' {
+        return JSON_JsonValue{0, nil}
+    }
+
+    // Consume the opening quote.
+    parser.index = parser.index + 1
+    let start = parser.index
+
+    // The raw source is always at least as long as the decoded string.
+    var buffer = malloc(parser.length - start + 1) as *u8
+    if buffer == nil {
+        return JSON_JsonValue{0, nil}
+    }
+
+    var offset: usize = 0
+
+    loop {
+        if parser.index >= parser.length {
+            free(buffer as *u0)
+            return JSON_JsonValue{0, nil}
+        }
+
+        let c = parser.text[parser.index]
+
+        if c == '"' {
+            parser.index = parser.index + 1
+            buffer[offset] = '\0'
+            return JSON_JsonValue{JSON_string_type, buffer as *u0}
+        }
+
+        if c == '\\' {
+            parser.index = parser.index + 1
+            if parser.index >= parser.length {
+                free(buffer as *u0)
+                return JSON_JsonValue{0, nil}
+            }
+
+            let escape = parser.text[parser.index]
+            parser.index = parser.index + 1
+
+            if escape == '"' {
+                buffer[offset] = '"'
+                offset = offset + 1
+            }
+            else if escape == '\\' {
+                buffer[offset] = '\\'
+                offset = offset + 1
+            }
+            else if escape == '/' {
+                buffer[offset] = '/'
+                offset = offset + 1
+            }
+            else if escape == 'b' {
+                buffer[offset] = 8
+                offset = offset + 1
+            }
+            else if escape == 'f' {
+                buffer[offset] = 12
+                offset = offset + 1
+            }
+            else if escape == 'n' {
+                buffer[offset] = '\n'
+                offset = offset + 1
+            }
+            else if escape == 'r' {
+                buffer[offset] = '\r'
+                offset = offset + 1
+            }
+            else if escape == 't' {
+                buffer[offset] = '\t'
+                offset = offset + 1
+            }
+            else if escape == 'u' {
+                let high = JSON_read_hex4(parser)
+                if high < 0 {
+                    free(buffer as *u0)
+                    return JSON_JsonValue{0, nil}
+                }
+
+                var codepoint = high
+
+                if high >= 0xD800 and high <= 0xDBFF {
+                    // A high surrogate must be followed by a low surrogate.
+                    if parser.index + 1 >= parser.length {
+                        free(buffer as *u0)
+                        return JSON_JsonValue{0, nil}
+                    }
+                    if parser.text[parser.index] != '\\' or parser.text[parser.index + 1] != 'u' {
+                        free(buffer as *u0)
+                        return JSON_JsonValue{0, nil}
+                    }
+
+                    parser.index = parser.index + 2
+                    let low = JSON_read_hex4(parser)
+                    if low < 0xDC00 or low > 0xDFFF {
+                        free(buffer as *u0)
+                        return JSON_JsonValue{0, nil}
+                    }
+
+                    codepoint = 0x10000 + (high - 0xD800) * 0x400 + (low - 0xDC00)
+                }
+                else if high >= 0xDC00 and high <= 0xDFFF {
+                    // A lone low surrogate is invalid.
+                    free(buffer as *u0)
+                    return JSON_JsonValue{0, nil}
+                }
+
+                offset = JSON_utf8_write(buffer, offset, codepoint)
+            }
+            else {
+                free(buffer as *u0)
+                return JSON_JsonValue{0, nil}
+            }
+        }
+        else {
+            // Unescaped control characters are invalid in JSON strings.
+            if c < ' ' {
+                free(buffer as *u0)
+                return JSON_JsonValue{0, nil}
+            }
+
+            buffer[offset] = c
+            offset = offset + 1
+            parser.index = parser.index + 1
+        }
+    }
+
+    free(buffer as *u0)
+    return JSON_JsonValue{0, nil}
+}
+
+@private
+def JSON_parse_number(parser: *JSON_Parser) -> JSON_JsonValue {
+    let start = parser.index
+    var is_float = false
+
+    if parser.text[parser.index] == '-' {
+        parser.index = parser.index + 1
+    }
+
+    if parser.index >= parser.length {
+        return JSON_JsonValue{0, nil}
+    }
+
+    // Integer part.
+    let first = parser.text[parser.index]
+    if first == '0' {
+        parser.index = parser.index + 1
+    }
+    else if first >= '1' and first <= '9' {
+        loop {
+            if parser.index >= parser.length {
+                break
+            }
+            let c = parser.text[parser.index]
+            if c < '0' or c > '9' {
+                break
+            }
+            parser.index = parser.index + 1
+        }
+    }
+    else {
+        return JSON_JsonValue{0, nil}
+    }
+
+    // Fractional part.
+    if parser.index < parser.length and parser.text[parser.index] == '.' {
+        is_float = true
+        parser.index = parser.index + 1
+
+        if parser.index >= parser.length {
+            return JSON_JsonValue{0, nil}
+        }
+
+        let c = parser.text[parser.index]
+        if c < '0' or c > '9' {
+            return JSON_JsonValue{0, nil}
+        }
+
+        loop {
+            if parser.index >= parser.length {
+                break
+            }
+            let digit = parser.text[parser.index]
+            if digit < '0' or digit > '9' {
+                break
+            }
+            parser.index = parser.index + 1
+        }
+    }
+
+    // Exponent part.
+    if parser.index < parser.length {
+        let c = parser.text[parser.index]
+        if c == 'e' or c == 'E' {
+            is_float = true
+            parser.index = parser.index + 1
+
+            if parser.index < parser.length {
+                let sign = parser.text[parser.index]
+                if sign == '+' or sign == '-' {
+                    parser.index = parser.index + 1
+                }
+            }
+
+            if parser.index >= parser.length {
+                return JSON_JsonValue{0, nil}
+            }
+
+            let digit = parser.text[parser.index]
+            if digit < '0' or digit > '9' {
+                return JSON_JsonValue{0, nil}
+            }
+
+            loop {
+                if parser.index >= parser.length {
+                    break
+                }
+                let next = parser.text[parser.index]
+                if next < '0' or next > '9' {
+                    break
+                }
+                parser.index = parser.index + 1
+            }
+        }
+    }
+
+    let end = parser.index
+
+    // Copy the number into a temporary NUL-terminated buffer for libc.
+    var buffer = malloc(end - start + 1) as *u8
+    if buffer == nil {
+        return JSON_JsonValue{0, nil}
+    }
+
+    memcpy(buffer as *u0, (parser.text + start) as *u0, end - start)
+    buffer[end - start] = '\0'
+
+    if is_float {
+        var parsed = strtod(buffer, nil)
+        free(buffer as *u0)
+
+        var data = malloc(sizeof(f64)) as *f64
+        if data == nil {
+            return JSON_JsonValue{0, nil}
+        }
+
+        *data = parsed
+        return JSON_JsonValue{JSON_float_type, data as *u0}
+    }
+
+    var parsed = strtoll(buffer, nil, 10)
+    free(buffer as *u0)
+
+    var data = malloc(sizeof(i64)) as *i64
+    if data == nil {
+        return JSON_JsonValue{0, nil}
+    }
+
+    *data = parsed
+    return JSON_JsonValue{JSON_integer_type, data as *u0}
+}
+
+@private
+def JSON_parse_boolean(parser: *JSON_Parser) -> JSON_JsonValue {
+    var value = false
+    var length: usize = 0
+
+    if parser.index + 4 <= parser.length {
+        if memcmp(parser.text + parser.index, "true", 4) == 0 {
+            value = true
+            length = 4
+        }
+    }
+
+    if length == 0 {
+        if parser.index + 5 <= parser.length {
+            if memcmp(parser.text + parser.index, "false", 5) == 0 {
+                value = false
+                length = 5
+            }
+        }
+    }
+
+    if length == 0 {
+        return JSON_JsonValue{0, nil}
+    }
+
+    parser.index = parser.index + length
+
+    var data = malloc(sizeof(bool)) as *bool
+    if data == nil {
+        return JSON_JsonValue{0, nil}
+    }
+
+    *data = value
+    return JSON_JsonValue{JSON_boolean_type, data as *u0}
+}
+
+@private
+def JSON_parse_null(parser: *JSON_Parser) -> JSON_JsonValue {
+    if parser.index + 4 > parser.length {
+        return JSON_JsonValue{0, nil}
+    }
+
+    if memcmp(parser.text + parser.index, "null", 4) != 0 {
+        return JSON_JsonValue{0, nil}
+    }
+
+    parser.index = parser.index + 4
+    return JSON_JsonValue{JSON_null_type, nil}
+}
+
+def JSON_parse(text: *u8) -> JSON_JsonValue {
+    if text == nil {
+        return JSON_JsonValue{0, nil}
+    }
+
+    var parser = JSON_Parser{
+        text,
+        0,
+        strlen(text)
+    }
+
+    let value = JSON_parse_value(&parser)
+
+    JSON_skip_whitespace(&parser)
+
+    // Reject trailing characters.
+    if parser.index != parser.length {
+        return JSON_JsonValue{0, nil}
+    }
+
+    return value
+}
+
+def JSON_NULL() -> JSON_JsonValue {
+    return JSON_JsonValue{0, nil}
+}
+
+def JSON_is_null(value: JSON_JsonValue) -> bool {
+    return value.type == JSON_null_type
+}
+
+def JSON_get_string(value: JSON_JsonValue) -> *u8 {
+    if value.type != JSON_string_type {
+        return nil
+    }
+    return value.data as *u8
+}
+
+def JSON_get_integer(value: JSON_JsonValue) -> i64 {
+    if value.type != JSON_integer_type {
+        return 0
+    }
+    return *(value.data as *i64)
+}
+
+def JSON_get_float(value: JSON_JsonValue) -> f64 {
+    if value.type != JSON_float_type {
+        return 0.0
+    }
+    return *(value.data as *f64)
+}
+
+def JSON_get_boolean(value: JSON_JsonValue) -> bool {
+    if value.type != JSON_boolean_type {
+        return false
+    }
+    return *(value.data as *bool)
+}
+
+def JSON_object_count(value: JSON_JsonValue) -> usize {
+    if value.type != JSON_object_type {
+        return 0
+    }
+    let object = value.data as *JSON_Object
+    return object.count
+}
+
+def JSON_array_count(value: JSON_JsonValue) -> usize {
+    if value.type != JSON_array_type {
+        return 0
+    }
+    let array = value.data as *JSON_Array
+    return array.count
+}
+
+def JSON_get_object(value: JSON_JsonValue, key: *u8) -> JSON_JsonValue {
+    if value.type != JSON_object_type {
+        return JSON_NULL()
+    }
+
+    let object = value.data as *JSON_Object
+    var i: usize = 0
+
+    loop {
+        if i >= object.count {
+            break
+        }
+
+        if strcmp(object.keys[i], key) == 0 {
+            return *object.values[i]
+        }
+
+        i = i + 1
+    }
+
+    return JSON_NULL()
+}
+
+def JSON_get_object_item(value: JSON_JsonValue, key: *u8) -> JSON_JsonValue {
+    return JSON_get_object(value, key)
+}
+
+def JSON_get_array(value: JSON_JsonValue, key: *u8) -> JSON_JsonValue {
+    let item = JSON_get_object(value, key)
+    if item.type != JSON_array_type {
+        return JSON_NULL()
+    }
+    return item
+}
+
+def JSON_get_array_item(value: JSON_JsonValue, index: usize) -> JSON_JsonValue {
+    if value.type != JSON_array_type {
+        return JSON_NULL()
+    }
+
+    let array = value.data as *JSON_Array
+    if index >= array.count {
+        return JSON_NULL()
+    }
+
+    return *array.values[index]
+}
