@@ -244,6 +244,16 @@ static LLVMTypeRef TypeRef_of(TypeData* type) {
     }
 }
 
+static LLVMTypeRef TypeRef_pointee(TypeData* ptr_type) {
+    assert(ptr_type != NULL);
+    if (!is_pointer_type(ptr_type)) {
+        return TypeRef_of(ptr_type);
+    }
+    TypeData* pointee = TypeData_retype(ptr_type, ptr_type->pointer_depth - 1);
+    assert(pointee != NULL);
+    return TypeRef_of(pointee);
+}
+
 static void set_reference(Ast* node, LLVMValueRef value, LLVMTypeRef type) {
     if (!node) return;
     if (!node->symbol) return;
@@ -1438,10 +1448,9 @@ LLVMValueRef llvm_selector_address(Ast* node, bool is_global) {
 
     TypeData* obj_td = object->symbol->type;
     bool is_ptr = is_pointer_type(obj_td) && obj_td->pointer_depth > 0;
-    if (is_ptr) {
-        obj_td = TypeData_retype(obj_td, obj_td->pointer_depth - 1);
-    }
-    LLVMTypeRef  struct_type = TypeRef_of(obj_td);
+    LLVMTypeRef  struct_type = is_ptr
+        ? TypeRef_pointee(obj_td)
+        : TypeRef_of(obj_td);
     assert(struct_type != NULL);
     int index                = node->selector_expression.field_index;
     assert(index >= 0);
@@ -1616,10 +1625,7 @@ static LLVMValueRef llvm_index_address(Ast* node, bool is_global) {
         return gep;
     }
 
-    TypeData* pointee = is_pointer_type(object_td)
-        ? TypeData_retype(object_td, object_td->pointer_depth - 1)
-        : object_td;
-    LLVMTypeRef elem_type = TypeRef_of(pointee);
+    LLVMTypeRef elem_type = TypeRef_pointee(object_td);
     assert(elem_type != NULL);
     LLVMValueRef ptr = llvm_expression(object_node, is_global);
     assert(ptr != NULL);
@@ -1665,9 +1671,7 @@ LLVMValueRef llvm_index_expression(Ast* node, bool is_global) {
             data_ptr = LLVMBuildGEP2(env.builder, elem_type, data, &s64, 1, "");
             assert(data_ptr != NULL);
         } else if (is_pointer_type(object_td)) {
-            TypeData* elem_td = TypeData_retype(object_td, object_td->pointer_depth - 1);
-            assert(elem_td != NULL);
-            LLVMTypeRef elem_type = TypeRef_of(elem_td);
+            LLVMTypeRef elem_type = TypeRef_pointee(object_td);
             assert(elem_type != NULL);
             LLVMValueRef ptr = llvm_expression(object_node, is_global);
             assert(ptr != NULL);
@@ -1795,7 +1799,38 @@ static const ArithOpEntry ARITH_OPS[] = {
     { "%=", LLVMBuildSRem, LLVMBuildFRem },
 };
 
+static LLVMValueRef llvm_build_pointer_arith(const char* op, LLVMValueRef lhs, LLVMValueRef rhs, TypeData* type) {
+    LLVMTypeRef elem_type = TypeRef_pointee(type);
+    assert(elem_type != NULL);
+
+    LLVMValueRef base  = lhs;
+    LLVMValueRef index = rhs;
+    if (LLVMGetTypeKind(LLVMTypeOf(lhs)) != LLVMPointerTypeKind &&
+        LLVMGetTypeKind(LLVMTypeOf(rhs)) == LLVMPointerTypeKind) {
+        base  = rhs;
+        index = lhs;
+    }
+
+    index = LLVMBuildIntCast2(env.builder, index, LLVMInt64TypeInContext(env.context), true, "");
+    assert(index != NULL);
+
+    if (op[0] == '-') {
+        index = LLVMBuildNeg(env.builder, index, "");
+        assert(index != NULL);
+    }
+
+    LLVMValueRef result = LLVMBuildGEP2(env.builder, elem_type, base, &index, 1, "");
+    assert(result != NULL);
+    return result;
+}
+
 static LLVMValueRef llvm_build_arith(const char* op, LLVMValueRef lhs, LLVMValueRef rhs, TypeData* type) {
+    if (is_pointer_type(type) &&
+        (strcmp(op, "+") == 0 || strcmp(op, "+=") == 0 ||
+         strcmp(op, "-") == 0 || strcmp(op, "-=") == 0)) {
+        return llvm_build_pointer_arith(op, lhs, rhs, type);
+    }
+
     bool is_float = is_float_type(type);
     for (size_t i = 0; i < ARRAY_SIZE(ARITH_OPS); i++) {
         if (strcmp(op, ARITH_OPS[i].op) == 0) {
@@ -2199,6 +2234,15 @@ LLVMValueRef llvm_postfix_expression(Ast* node, bool is_global) {
     assert(ty != NULL);
     LLVMValueRef old_value = LLVMBuildLoad2(env.builder, ty, addr, "");
     assert(old_value != NULL);
+
+    if (is_pointer_type(td)) {
+        LLVMValueRef one = LLVMConstInt(LLVMInt64TypeInContext(env.context), 1, true);
+        LLVMValueRef updated = strcmp(op, "++") == 0
+            ? llvm_build_pointer_arith("+", old_value, one, td)
+            : llvm_build_pointer_arith("-", old_value, one, td);
+        LLVMBuildStore(env.builder, updated, addr);
+        return old_value;
+    }
 
     LLVMValueRef one = is_float_type(td)
         ? LLVMConstReal(ty, 1.0)

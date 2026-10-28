@@ -954,20 +954,6 @@ Ast* parse_type() {
         if (token_is(token_current(), "[")) {
             SourceSite bracket_site = token_current().source;
             token_next();
-            
-            if (token_is(token_current(), "*")) {
-                token_next();
-                if (!token_is(token_current(), "]")) {
-                    log_source_error(token_current().source, ERROR_SYNTAX, "Expected ']' after '*'");
-                    return NULL;
-                }
-                token_next();
-                Ast* elem_type = parse_type();
-                Ast* ptr_node = Ast_create(AST_STAR_EXPRESSION);
-                ptr_node->source = bracket_site;
-                ptr_node->star_expression.object = elem_type;
-                return ptr_node;
-            }
 
             Ast* size_expr = NULL;
 

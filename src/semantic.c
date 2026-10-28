@@ -755,6 +755,20 @@ static int validate_bitwise(TypeData* left_td, TypeData* right_td, const char* o
 }
 
 static int get_operator_result_type(TypeData* left_td, TypeData* right_td, const char* op, TypeData** result_td) {
+
+    if (strcmp(op, "+") == 0 || strcmp(op, "-") == 0 || strcmp(op, "+=") == 0 || strcmp(op, "-=") == 0) {
+        if (is_pointer_type(left_td) && is_integer_type(right_td)) {
+            *result_td = left_td;
+            return 1;
+        }
+
+        if (strcmp(op, "+") == 0 &&
+            is_integer_type(left_td) && is_pointer_type(right_td)) {
+            *result_td = right_td;
+            return 1;
+        }
+    }
+
     if (strcmp(op, "+")   == 0 || strcmp(op, "-")  == 0 || strcmp(op, "*") == 0 ||
         strcmp(op, "/")   == 0 || strcmp(op, "%")  == 0 ||
         strcmp(op, "+=")  == 0 || strcmp(op, "-=") == 0 || strcmp(op, "*=") == 0 ||
@@ -947,7 +961,6 @@ static void check_let_initializer_is_constant(Ast* node, Scope* scope) {
 
             Ast* decl = find_declaration(name, scope, true, &node->source, NULL);
             if (!is_compile_time_constant_decl(decl)) {
-                printf("899\n");
                 NON_CONSTANT_LET_INIT_ERROR(node->source, name);
             }
             return;
@@ -963,7 +976,6 @@ static void check_let_initializer_is_constant(Ast* node, Scope* scope) {
             return;
 
         case AST_CALL_EXPRESSION:
-                printf("915\n");
             NON_CONSTANT_LET_INIT_ERROR(node->source, identifier_name(node));
             return;
 
@@ -1450,8 +1462,6 @@ void semantic_if_statement(Ast* node, Scope* scope) {
         semantic_expression(if_node->if_statement.test, scope, (TypeData*)(&TYPE_BOOL_DATA));
         TypeData* test_td = TypeData_of(if_node->if_statement.test);
         if (!is_boolean_type(test_td) && !is_numeric_type(test_td)) {
-
-            printf("???????\n");
             TYPE_MISMATCH_ERROR(node->source, "bool", TypeData_to_string(test_td));
         }
     }
@@ -2397,8 +2407,7 @@ void semantic_binary_expression(Ast* node, Scope* scope, TypeData* expected_type
     char lstr[256], rstr[256];
     TypeData* result_td;
 
-    if ((left_td->base != 0 && right_td->base != 0 && !TypeData_match(left_td, right_td)) ||
-        !get_operator_result_type(left_td, right_td, op, &result_td)) {
+    if ((left_td->base == 0 && right_td->base == 0) || !get_operator_result_type(left_td, right_td, op, &result_td)) {
         OPERATOR_TYPE_ERROR(node->source, op, TypeData_to_string(left_td), TypeData_to_string(right_td));
         return;
     }
@@ -2586,7 +2595,8 @@ static void semantic_enum_declaration(Ast* node, Scope* scope) {
 void semantic_literal(Ast* node, Scope* scope, TypeData* expected_type) {
     TypeData* type = NULL;
 
-    switch (node->type) {        case AST_LITERAL_BOOLEAN:
+    switch (node->type) {        
+        case AST_LITERAL_BOOLEAN:
             type = (TypeData*)(&TYPE_BOOL_DATA);
             break;
 
