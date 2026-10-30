@@ -9,44 +9,44 @@ using Rectangle LUCI_Rectangle
 
 // Constants
 
-let DEBUG = false
-let TARGET_FRAME_TIME: f64 = 1.0 / 144.0
+const DEBUG = false
+const TARGET_FRAME_TIME: f64 = 0.006944444444444444
 
 // Rain
-let MAX_RAIN_COUNT: i32 = 8
+const MAX_RAIN_COUNT: i32 = 8
 
 // Player blink
-let BLINK_MIN_TIME: f32 = 1.0
-let BLINK_MAX_TIME: f32 = 3.0
-let BLINK_DURATION: f32 = 0.2
+const BLINK_MIN_TIME: f32 = 1.0
+const BLINK_MAX_TIME: f32 = 3.0
+const BLINK_DURATION: f32 = 0.2
 
 // Umbrella
-let UMBRELLA_WAIT_MIN: f32      = 5.0
-let UMBRELLA_WAIT_MAX: f32      = 8.0
-let UMBRELLA_OPEN_MIN_TIME: f32 = 2.0
-let UMBRELLA_OPEN_MAX_TIME: f32 = 5.0
-let UMBRELLA_RISE_SPEED: f32    = 800.0
-let UMBRELLA_SINK_SPEED: f32    = 360.0
-let UMBRELLA_FRAME_TIME: f32    = 0.12
-let UMBRELLA_START_Y: f32       = 420.0
-let UMBRELLA_END_Y: f32         = 290.0
-let UMBRELLA_MAX_X: f32         = 300.0
+const UMBRELLA_WAIT_MIN: f32      = 5.0
+const UMBRELLA_WAIT_MAX: f32      = 8.0
+const UMBRELLA_OPEN_MIN_TIME: f32 = 2.0
+const UMBRELLA_OPEN_MAX_TIME: f32 = 5.0
+const UMBRELLA_RISE_SPEED: f32    = 800.0
+const UMBRELLA_SINK_SPEED: f32    = 360.0
+const UMBRELLA_FRAME_TIME: f32    = 0.12
+const UMBRELLA_START_Y: f32       = 420.0
+const UMBRELLA_END_Y: f32         = 290.0
+const UMBRELLA_MAX_X: f32         = 300.0
 
-let UMBRELLA_WAITING: i32 = 0
-let UMBRELLA_RISING: i32  = 1
-let UMBRELLA_OPENING: i32 = 2
-let UMBRELLA_OPEN: i32    = 3
-let UMBRELLA_CLOSING: i32 = 4
-let UMBRELLA_SINKING: i32 = 5
+const UMBRELLA_WAITING: i32 = 0
+const UMBRELLA_RISING: i32  = 1
+const UMBRELLA_OPENING: i32 = 2
+const UMBRELLA_OPEN: i32    = 3
+const UMBRELLA_CLOSING: i32 = 4
+const UMBRELLA_SINKING: i32 = 5
 
 // Game over
-let GAME_OVER_SHAKE_DURATION: f32 = 0.25
-let GAME_OVER_SHAKE_AMOUNT:   i32 = 4
+const GAME_OVER_SHAKE_DURATION: f32 = 0.25
+const GAME_OVER_SHAKE_AMOUNT:   i32 = 4
 
 // Score effects
-let NUMBER_TIMELIFE: f32    = 0.5
-let NUMBER_P1: Rectangle    = Rectangle{ 0, 0, 16, 16}
-let NUMBER_MIS: Rectangle = Rectangle{16, 0, 32, 16}
+const NUMBER_TIMELIFE: f32    = 0.5
+const NUMBER_P1: Rectangle    = Rectangle{ 0, 0, 16, 16}
+const NUMBER_MIS: Rectangle = Rectangle{16, 0, 32, 16}
 
 // Types
 

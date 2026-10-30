@@ -65,8 +65,8 @@ typedef struct TypeData {
     StructDef*  struct_def;
     union {
         struct {
-            size_t length;
             struct TypeData* element_type;
+            size_t length;
         } array;
 
         struct {

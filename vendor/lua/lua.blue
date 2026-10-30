@@ -7,68 +7,68 @@ struct __va_list_tag {
     reg_save_area: *u0
 }
 
-let LUA_VERSION_MAJOR = "5"
-let LUA_VERSION_MINOR = "4"
-let LUA_VERSION_RELEASE = "9"
-let LUA_VERSION_NUM = 504
-let LUA_VERSION = "Lua 5.4"
-let LUA_RELEASE = "Lua 5.4.9"
-let LUA_COPYRIGHT = "Lua 5.4.9  Copyright (C) 1994-2026 Lua.org, PUC-Rio"
-let LUA_AUTHORS = "R. Ierusalimschy, L. H. de Figueiredo, W. Celes"
-let LUA_OK = 0
-let LUA_YIELD = 1
-let LUA_ERRRUN = 2
-let LUA_ERRSYNTAX = 3
-let LUA_ERRMEM = 4
-let LUA_ERRERR = 5
-let LUA_TNIL = 0
-let LUA_TBOOLEAN = 1
-let LUA_TLIGHTUSERDATA = 2
-let LUA_TNUMBER = 3
-let LUA_TSTRING = 4
-let LUA_TTABLE = 5
-let LUA_TFUNCTION = 6
-let LUA_TUSERDATA = 7
-let LUA_TTHREAD = 8
-let LUA_NUMTYPES = 9
-let LUA_MINSTACK = 20
-let LUA_RIDX_MAINTHREAD = 1
-let LUA_RIDX_GLOBALS = 2
-let LUA_RIDX_LAST = LUA_RIDX_GLOBALS
-let LUA_OPADD = 0
-let LUA_OPSUB = 1
-let LUA_OPMUL = 2
-let LUA_OPMOD = 3
-let LUA_OPPOW = 4
-let LUA_OPDIV = 5
-let LUA_OPIDIV = 6
-let LUA_OPBAND = 7
-let LUA_OPBOR = 8
-let LUA_OPBXOR = 9
-let LUA_OPSHL = 10
-let LUA_OPSHR = 11
-let LUA_OPUNM = 12
-let LUA_OPBNOT = 13
-let LUA_OPEQ = 0
-let LUA_OPLT = 1
-let LUA_OPLE = 2
-let LUA_GCSTOP = 0
-let LUA_GCRESTART = 1
-let LUA_GCCOLLECT = 2
-let LUA_GCCOUNT = 3
-let LUA_GCCOUNTB = 4
-let LUA_GCSTEP = 5
-let LUA_GCSETPAUSE = 6
-let LUA_GCSETSTEPMUL = 7
-let LUA_GCISRUNNING = 9
-let LUA_GCGEN = 10
-let LUA_GCINC = 11
-let LUA_NUMTAGS = LUA_NUMTYPES
-let LUA_HOOKCALL = 0
-let LUA_HOOKRET = 1
-let LUA_HOOKLINE = 2
-let LUA_HOOKCOUNT = 3
-let LUA_HOOKTAILCALL = 4
+const LUA_VERSION_MAJOR = "5"
+const LUA_VERSION_MINOR = "4"
+const LUA_VERSION_RELEASE = "9"
+const LUA_VERSION_NUM = 504
+const LUA_VERSION = "Lua 5.4"
+const LUA_RELEASE = "Lua 5.4.9"
+const LUA_COPYRIGHT = "Lua 5.4.9  Copyright (C) 1994-2026 Lua.org, PUC-Rio"
+const LUA_AUTHORS = "R. Ierusalimschy, L. H. de Figueiredo, W. Celes"
+const LUA_OK = 0
+const LUA_YIELD = 1
+const LUA_ERRRUN = 2
+const LUA_ERRSYNTAX = 3
+const LUA_ERRMEM = 4
+const LUA_ERRERR = 5
+const LUA_TNIL = 0
+const LUA_TBOOLEAN = 1
+const LUA_TLIGHTUSERDATA = 2
+const LUA_TNUMBER = 3
+const LUA_TSTRING = 4
+const LUA_TTABLE = 5
+const LUA_TFUNCTION = 6
+const LUA_TUSERDATA = 7
+const LUA_TTHREAD = 8
+const LUA_NUMTYPES = 9
+const LUA_MINSTACK = 20
+const LUA_RIDX_MAINTHREAD = 1
+const LUA_RIDX_GLOBALS = 2
+const LUA_RIDX_LAST = 2
+const LUA_OPADD = 0
+const LUA_OPSUB = 1
+const LUA_OPMUL = 2
+const LUA_OPMOD = 3
+const LUA_OPPOW = 4
+const LUA_OPDIV = 5
+const LUA_OPIDIV = 6
+const LUA_OPBAND = 7
+const LUA_OPBOR = 8
+const LUA_OPBXOR = 9
+const LUA_OPSHL = 10
+const LUA_OPSHR = 11
+const LUA_OPUNM = 12
+const LUA_OPBNOT = 13
+const LUA_OPEQ = 0
+const LUA_OPLT = 1
+const LUA_OPLE = 2
+const LUA_GCSTOP = 0
+const LUA_GCRESTART = 1
+const LUA_GCCOLLECT = 2
+const LUA_GCCOUNT = 3
+const LUA_GCCOUNTB = 4
+const LUA_GCSTEP = 5
+const LUA_GCSETPAUSE = 6
+const LUA_GCSETSTEPMUL = 7
+const LUA_GCISRUNNING = 9
+const LUA_GCGEN = 10
+const LUA_GCINC = 11
+const LUA_NUMTAGS = 9
+const LUA_HOOKCALL = 0
+const LUA_HOOKRET = 1
+const LUA_HOOKLINE = 2
+const LUA_HOOKCOUNT = 3
+const LUA_HOOKTAILCALL = 4
 using lua_Number = f64
 using lua_Integer = i64
 using lua_Unsigned = u64
@@ -211,16 +211,16 @@ def lua_call(L: *lua_State, nargs: i32, nresults: i32) -> u0 {
 
 // lualib
 
-let LUA_VERSUFFIX = "_5_4"
-let LUA_COLIBNAME = "coroutine"
-let LUA_TABLIBNAME = "table"
-let LUA_IOLIBNAME = "io"
-let LUA_OSLIBNAME = "os"
-let LUA_STRLIBNAME = "string"
-let LUA_UTF8LIBNAME = "utf8"
-let LUA_MATHLIBNAME = "math"
-let LUA_DBLIBNAME = "debug"
-let LUA_LOADLIBNAME = "package"
+const LUA_VERSUFFIX = "_5_4"
+const LUA_COLIBNAME = "coroutine"
+const LUA_TABLIBNAME = "table"
+const LUA_IOLIBNAME = "io"
+const LUA_OSLIBNAME = "os"
+const LUA_STRLIBNAME = "string"
+const LUA_UTF8LIBNAME = "utf8"
+const LUA_MATHLIBNAME = "math"
+const LUA_DBLIBNAME = "debug"
+const LUA_LOADLIBNAME = "package"
 def luaopen_base(L: *lua_State) -> i32
 def luaopen_coroutine(L: *lua_State) -> i32
 def luaopen_table(L: *lua_State) -> i32
@@ -235,10 +235,10 @@ def luaL_openlibs(L: *lua_State) -> u0
 
 //lauxlib
 
-let LUA_GNAME = "_G"
-let LUA_LOADED_TABLE = "_LOADED"
-let LUA_PRELOAD_TABLE = "_PRELOAD"
-let LUA_FILEHANDLE = "FILE*"
+const LUA_GNAME = "_G"
+const LUA_LOADED_TABLE = "_LOADED"
+const LUA_PRELOAD_TABLE = "_PRELOAD"
+const LUA_FILEHANDLE = "FILE*"
 struct luaL_Reg {
     name: *u8
     func: (*lua_State) -> i32

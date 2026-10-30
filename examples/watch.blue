@@ -6,13 +6,13 @@ using end       LUCI_end_drawing
 using Texture   LUCI_Texture
 using Rectangle LUCI_Rectangle
 
-let center_x: f32 = 89.0 * 2.0
-let center_y: f32 = 65.0 * 2.0
+const center_x: f32 = 178.0
+const center_y: f32 = 130.0
 
-let WAVE_AMPLITUDE: f32 = 2.0
-let WAVE_SPEED:     f32 = 2.5
-let WAVE_WAIT_MIN:  f32 = 0.6
-let WAVE_WAIT_MAX:  f32 = 1.8
+const WAVE_AMPLITUDE: f32 = 2.0
+const WAVE_SPEED:     f32 = 2.5
+const WAVE_WAIT_MIN:  f32 = 0.6
+const WAVE_WAIT_MAX:  f32 = 1.8
 
 struct WaveMotion {
     x: f32
@@ -35,9 +35,9 @@ var background: Texture
 var motion: [4]WaveMotion
 var previous_time: f64
 
-let SH_RECT = Rectangle{0, 0, 26, 5}
-let MH_RECT = Rectangle{0, 6, 26, 14}
-let HH_RECT = Rectangle{0, 21, 26, 6}
+const SH_RECT = Rectangle{0, 0, 26, 5}
+const MH_RECT = Rectangle{0, 6, 26, 14}
+const HH_RECT = Rectangle{0, 21, 26, 6}
 
 def get_time() -> f64 {
     var ts: timespec

@@ -325,6 +325,15 @@
         log_source_error(source, ERROR_UNKNOWN, log_description); \
     } while (0)
 
+#define CONST_LITERAL_INIT_ERROR(source, name) \
+    do { \
+        semantic_errors = true; \
+        snprintf(log_description, sizeof(log_description), \
+                "constant '%s' must be initialized with a literal value", \
+                name); \
+        log_source_error(source, ERROR_UNKNOWN, log_description); \
+    } while (0)
+
 #define NON_INDEXABLE_TYPE_ERROR(source, type_name) \
     do { \
         semantic_errors = true; \
@@ -338,6 +347,14 @@
         semantic_errors = true; \
         snprintf(log_description, sizeof(log_description), \
                 "array/slice index must be an integer type, found '%s'", type_name); \
+        log_source_error(source, ERROR_UNKNOWN, log_description); \
+    } while (0)
+
+#define ARRAY_LENGTH_ERROR(source, description) \
+    do { \
+        semantic_errors = true; \
+        snprintf(log_description, sizeof(log_description), \
+                "array length %s", description); \
         log_source_error(source, ERROR_UNKNOWN, log_description); \
     } while (0)
 
@@ -408,7 +425,7 @@
 static bool semantic_errors = false;
 static Scope* global_scope = NULL;
 
-static bool eval_constant_integer(Ast* expr, long* out_val);
+static bool eval_integer_constant(Ast* node, int64_t* out);
 static int check_literal_fits_target(SourceSite source, Ast* expr, TypeData* target_type);
 
 static const char* undeclared_type_name(const Ast* type_node) {
@@ -476,9 +493,9 @@ static char* literal_to_string(Ast* node, const char* buffer) {
             return NULL;
             
         case AST_UNARY_EXPRESSION: {
-            long val;
-            if (eval_constant_integer(node, &val)) {
-                snprintf((char*)buffer, 256, "%ld", val);
+            int64_t val;
+            if (eval_integer_constant(node, &val)) {
+                snprintf((char*)buffer, 256, "%ld", (long)val);
                 return (char*)buffer;
             }
             return NULL;
@@ -497,63 +514,7 @@ static char* make_qualified_name(const char* prefix, const char* name) {
     return qual;
 }
 
-static bool eval_constant_integer(Ast* expr, long* out_val) {
-    if (!expr) return false;
-
-    switch (expr->type) {
-        case AST_LITERAL_INTEGER:
-            *out_val = expr->literal_integer.value;
-            return true;
-
-        case AST_UNARY_EXPRESSION: {
-            long arg_val;
-            if (!eval_constant_integer(expr->unary_expression.argument, &arg_val)) {
-                return false;
-            }
-
-            const char* op = expr->unary_expression.operator;
-            if (op[1] != '\0') return false; 
-
-            switch (op[0]) {
-                case '-': *out_val = -arg_val; return true;
-                case '+': *out_val =  arg_val; return true;
-                case '~': *out_val = ~arg_val; return true;
-                default:  return false;
-            }
-        }
-
-        case AST_BINARY_EXPRESSION: {
-            long left_val, right_val;
-            if (!eval_constant_integer(expr->binary_expression.left, &left_val) ||
-                !eval_constant_integer(expr->binary_expression.right, &right_val)) {
-                return false;
-            }
-
-            const char* op = expr->binary_expression.operator;
-            if (op[1] != '\0') return false; 
-
-            switch (op[0]) {
-                case '+': *out_val = left_val + right_val; return true;
-                case '-': *out_val = left_val - right_val; return true;
-                case '*': *out_val = left_val * right_val; return true;
-                case '/':
-                    if (right_val == 0) return false;
-                    *out_val = left_val / right_val;
-                    return true;
-                case '%':
-                    if (right_val == 0) return false;
-                    *out_val = left_val % right_val;
-                    return true;
-                default: return false;
-            }
-        }
-
-        default:
-            return false;
-    }
-}
-
-static int check_value_fits_target(long val, TypeBase target_type) {
+static int check_value_fits_target(int64_t val, TypeBase target_type) {
     switch (target_type) {
         case I8:    return val >= -128 && val <= 127;
         case I16:   return val >= -32768 && val <= 32767;
@@ -571,8 +532,8 @@ static int check_value_fits_target(long val, TypeBase target_type) {
 }
 
 static int check_literal_fits_target(SourceSite source, Ast* expr, TypeData* target_type) {
-    long val = 0;
-    if (eval_constant_integer(expr, &val)) {
+    int64_t val = 0;
+    if (eval_integer_constant(expr, &val)) {
         int fits = check_value_fits_target(val, target_type->base);
         if (!fits) {
             LITERAL_OUT_OF_RANGE_ERROR(source, TypeData_to_string(target_type));
@@ -792,13 +753,198 @@ static int get_operator_result_type(TypeData* left_td, TypeData* right_td, const
     return 0;
 }
 
+#define CONST_EVAL_MAX_DEPTH 128
+
+static Ast* const_eval_in_progress[CONST_EVAL_MAX_DEPTH];
+static size_t const_eval_in_progress_count = 0;
+
+static bool eval_integer_constant(Ast* node, int64_t* out) {
+    if (!node || !out) return false;
+
+    switch (node->type) {
+        case AST_LITERAL_INTEGER:
+            *out = node->literal_integer.value;
+            return true;
+
+        case AST_UNARY_EXPRESSION: {
+            int64_t argument_value = 0;
+            if (!eval_integer_constant(node->unary_expression.argument,
+                                       &argument_value)) {
+                return false;
+            }
+
+            const char* op = node->unary_expression.operator;
+            if (!op || op[1] != '\0') return false;
+
+            switch (op[0]) {
+                case '+':
+                    *out = argument_value;
+                    return true;
+                case '-':
+                    if (argument_value == INT64_MIN) return false;
+                    *out = -argument_value;
+                    return true;
+                case '~':
+                    *out = ~argument_value;
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        case AST_BINARY_EXPRESSION: {
+            int64_t left_value  = 0;
+            int64_t right_value = 0;
+            if (!eval_integer_constant(node->binary_expression.left,
+                                       &left_value) ||
+                !eval_integer_constant(node->binary_expression.right,
+                                       &right_value)) {
+                return false;
+            }
+
+            const char* op = node->binary_expression.operator;
+            if (!op || op[1] != '\0') return false;
+
+            switch (op[0]) {
+                case '+':
+                    return !__builtin_add_overflow(left_value, right_value, out);
+                case '-':
+                    return !__builtin_sub_overflow(left_value, right_value, out);
+                case '*':
+                    return !__builtin_mul_overflow(left_value, right_value, out);
+                case '/':
+                    if (right_value == 0 ||
+                        (left_value == INT64_MIN && right_value == -1)) {
+                        return false;
+                    }
+                    *out = left_value / right_value;
+                    return true;
+                case '%':
+                    if (right_value == 0 ||
+                        (left_value == INT64_MIN && right_value == -1)) {
+                        return false;
+                    }
+                    *out = left_value % right_value;
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        case AST_IDENTIFIER: {
+            Ast* declaration = node->symbol ? node->symbol->declaration : NULL;
+            if (!declaration ||
+                declaration->type != AST_VARIABLE_DECLARATION ||
+                !declaration->variable_declaration.is_constant ||
+                !declaration->variable_declaration.initializer) {
+                return false;
+            }
+
+            for (size_t i = 0; i < const_eval_in_progress_count; i++) {
+                if (const_eval_in_progress[i] == declaration) {
+                    return false;
+                }
+            }
+            if (const_eval_in_progress_count >= CONST_EVAL_MAX_DEPTH) {
+                return false;
+            }
+
+            const_eval_in_progress[const_eval_in_progress_count++] = declaration;
+            bool evaluated = eval_integer_constant(
+                declaration->variable_declaration.initializer, out);
+            const_eval_in_progress_count--;
+            return evaluated;
+        }
+
+        default:
+            return false;
+    }
+}
+
+bool get_integer_value(Ast* node, int64_t* length) {
+    return eval_integer_constant(node, length);
+}
+
+static bool has_float_constant(const Ast* node, int depth) {
+    if (!node || depth > 64) return false;
+
+    switch (node->type) {
+        case AST_LITERAL_FLOAT:
+            return true;
+
+        case AST_UNARY_EXPRESSION:
+            return has_float_constant(
+                node->unary_expression.argument, depth + 1);
+
+        case AST_BINARY_EXPRESSION:
+            return has_float_constant(
+                       node->binary_expression.left, depth + 1) ||
+                   has_float_constant(
+                       node->binary_expression.right, depth + 1);
+
+        case AST_IDENTIFIER: {
+            const Ast* declaration = node->symbol
+                ? (const Ast*)node->symbol->declaration : NULL;
+            if (!declaration ||
+                declaration->type != AST_VARIABLE_DECLARATION ||
+                !declaration->variable_declaration.is_constant) {
+                return false;
+            }
+            return has_float_constant(
+                declaration->variable_declaration.initializer, depth + 1);
+        }
+
+        default:
+            return false;
+    }
+}
+
+static int64_t validate_array_length(SourceSite source, Ast* length_node) {
+    if (!length_node) return 0;
+
+    int64_t length = 0;
+    if (eval_integer_constant(length_node, &length)) {
+        if (length <= 0) {
+            ARRAY_LENGTH_ERROR(source, "must be greater than zero");
+            return 0;
+        }
+        return length;
+    }
+
+    if (has_float_constant(length_node, 0)) {
+        ARRAY_LENGTH_ERROR(source, "must be an integer");
+        return 0;
+    }
+
+    ARRAY_LENGTH_ERROR(source, "must be an integer constant");
+    return 0;
+}
+
 static TypeData* get_type(Ast* type_node, Scope* scope) {
     if (!type_node) return TypeData_typeinv();
 
     if (type_node->type == AST_ARRAY_TYPE) {
         TypeData* elem = get_type(type_node->array_type.type, scope);
         if (elem->base == TYPEINV) return elem;
-        return TypeData_array(elem, type_node->array_type.length);
+
+        Ast* length_node = type_node->array_type.length;
+        int64_t length = 0;
+
+        if (length_node) {
+            bool had_errors = semantic_errors;
+            if (!length_node->symbol &&
+                (length_node->type == AST_IDENTIFIER ||
+                 length_node->type == AST_BINARY_EXPRESSION ||
+                 length_node->type == AST_UNARY_EXPRESSION)) {
+                semantic_expression(length_node, scope, TypeData_typeinv());
+            }
+
+            if (semantic_errors == had_errors) {
+                length = validate_array_length(length_node->source, length_node);
+            }
+        }
+
+        return TypeData_array(elem, length);
     }
 
     if (type_node->type == AST_SLICE_TYPE) {
@@ -925,25 +1071,20 @@ static TypeData* resolve_bit_literal_type(SourceSite source, const char* spellin
 }
 
 
-static bool is_compile_time_constant_decl(Ast* decl) {
-    if (!decl) return false;
-
-    switch (decl->type) {
-        case AST_VARIABLE_DECLARATION:
-            return decl->variable_declaration.is_constant;
-        case AST_ENUMERATOR:
-            return true;
-        case AST_SELECTOR_EXPRESSION:
-            return is_compile_time_constant_decl(decl->selector_expression.object);
-        default:
-            return false;
-    }
-}
-
-static void check_let_initializer_is_constant(Ast* node, Scope* scope) {
-    if (!node) return;
+static bool is_const_literal_value_depth(Ast* node, int depth) {
+    if (!node || depth > 64) return false;
 
     switch (node->type) {
+        case AST_IDENTIFIER: {
+            Ast* declaration = node->symbol ? node->symbol->declaration : NULL;
+            if (!declaration ||
+                declaration->type != AST_VARIABLE_DECLARATION ||
+                !declaration->variable_declaration.is_constant) {
+                return false;
+            }
+            return is_const_literal_value_depth(
+                declaration->variable_declaration.initializer, depth + 1);
+        }
         case AST_LITERAL_INTEGER:
         case AST_LITERAL_FLOAT:
         case AST_LITERAL_HEXADECIMAL:
@@ -952,45 +1093,69 @@ static void check_let_initializer_is_constant(Ast* node, Scope* scope) {
         case AST_LITERAL_CHAR:
         case AST_LITERAL_STRING:
         case AST_LITERAL_NIL:
-        case AST_SELECTOR_EXPRESSION:
-            return;
+            return true;
 
-        case AST_IDENTIFIER: {
-            const char* name = identifier_name(node);
-            if (name && is_primitive_base(find_TypeBase(name))) return;
-
-            Ast* decl = find_declaration(name, scope, true, &node->source, NULL);
-            if (!is_compile_time_constant_decl(decl)) {
-                NON_CONSTANT_LET_INIT_ERROR(node->source, name);
+        case AST_UNARY_EXPRESSION: {
+            const char* op = node->unary_expression.operator;
+            if (!op || (strcmp(op, "-") != 0 && strcmp(op, "+") != 0)) {
+                return false;
             }
-            return;
+            Ast* argument = node->unary_expression.argument;
+            if (!argument) return false;
+            switch (argument->type) {
+                case AST_LITERAL_INTEGER:
+                case AST_LITERAL_FLOAT:
+                case AST_LITERAL_HEXADECIMAL:
+                case AST_LITERAL_BINARY:
+                    return true;
+                case AST_UNARY_EXPRESSION:
+                    return is_const_literal_value_depth(argument, depth + 1);
+                default:
+                    return false;
+            }
         }
 
-        case AST_UNARY_EXPRESSION:
-            check_let_initializer_is_constant(node->unary_expression.argument, scope);
-            return;
-
-        case AST_BINARY_EXPRESSION:
-            check_let_initializer_is_constant(node->binary_expression.left, scope);
-            check_let_initializer_is_constant(node->binary_expression.right, scope);
-            return;
-
-        case AST_CALL_EXPRESSION:
-            NON_CONSTANT_LET_INIT_ERROR(node->source, identifier_name(node));
-            return;
+        case AST_LITERAL_ARRAY: {
+            Ast** elements = node->literal_array.arguments;
+            size_t count = vector_size(elements);
+            for (size_t i = 0; i < count; i++) {
+                if (!is_const_literal_value_depth(elements[i], depth + 1)) return false;
+            }
+            return true;
+        }
 
         case AST_LITERAL_COMPOUND: {
             Ast** args = node->literal_compound.arguments;
             size_t count = vector_size(args);
             for (size_t i = 0; i < count; i++) {
-                check_let_initializer_is_constant(args[i], scope);
+                if (!is_const_literal_value_depth(args[i], depth + 1)) return false;
             }
-            return;
+            return true;
+        }
+
+        case AST_BINARY_EXPRESSION: {
+            Ast* right = node->binary_expression.right;
+            Ast* left  = node->binary_expression.left;
+            if (!is_const_literal_value_depth(right, depth + 1) ||
+                !is_const_literal_value_depth(left, depth + 1)) {
+                return false;
+            }
+            return true;
+        }
+
+        case AST_CAST_EXPRESSION: {
+            Ast* arg = node->cast_expression.argument;
+            if (!is_const_literal_value_depth(arg, depth + 1)) return false;
+            return true;
         }
 
         default:
-            return;
+            return false;
     }
+}
+
+static bool is_const_literal_value(Ast* node) {
+    return is_const_literal_value_depth(node, 0);
 }
 
 void semantic_variable_declaration(Ast* node, Scope* scope) {
@@ -1034,6 +1199,12 @@ void semantic_variable_declaration(Ast* node, Scope* scope) {
     if (variable_init) {
         TypeData* expected = var_td ? var_td : TypeData_typeinv();
         semantic_expression(variable_init, scope, expected);
+    }
+
+    if (node->variable_declaration.is_constant &&
+        (!variable_init || !is_const_literal_value(variable_init))) {
+        SourceSite source = variable_init ? variable_init->source : node->source;
+        CONST_LITERAL_INIT_ERROR(source, var_name_str);
     }
 
     if (variable_init && variable_type) {
@@ -1804,8 +1975,8 @@ void semantic_call_expression(Ast* node, Scope* scope) {
 
                     if (param_td->pointer_depth == 0 && is_numeric_type(param_td)) {
                         if (arg->type == AST_LITERAL_INTEGER && is_integer_type(param_td)) {
-                            long value;
-                            literal_adapts = eval_constant_integer(arg, &value) &&
+                            int64_t value;
+                            literal_adapts = eval_integer_constant(arg, &value) &&
                                              check_value_fits_target(value, param_td->base);
                         } else if (arg->type == AST_LITERAL_FLOAT && is_float_type(param_td)) {
                             literal_adapts = true;
@@ -2134,9 +2305,9 @@ void semantic_range_expression(Ast* node, Scope* scope, TypeData* expected_type)
 
     if (expected_type && expected_type->base == ARRAY &&
         node->symbol->type->base != TYPEINV) {
-        long start_v, end_v;
-        if (!eval_constant_integer(start, &start_v) ||
-            !eval_constant_integer(end, &end_v) ||
+        int64_t start_v, end_v;
+        if (!eval_integer_constant(start, &start_v) ||
+            !eval_integer_constant(end, &end_v) ||
             (size_t)(end_v - start_v) == expected_type->array.length) {
             node->symbol->type = expected_type;
         }
@@ -2522,7 +2693,7 @@ static void semantic_using_declaration(Ast* node, Scope* scope) {
     node->symbol = Symbol_create(sym_name, alias_td, node);
 }
 
-static int enum_value_fits_type(long value, TypeData* type) {
+static int enum_value_fits_type(int64_t value, TypeData* type) {
     return check_value_fits_target(value, type->base);
 }
 
@@ -2557,7 +2728,7 @@ static void semantic_enum_declaration(Ast* node, Scope* scope) {
 
     Ast** members  = node->enum_declaration.members;
     size_t count   = members ? vector_size(members) : 0;
-    long   current = 0;
+    int64_t current = 0;
 
     for (size_t i = 0; i < count; i++) {
         Ast* mem = members[i];
@@ -2566,10 +2737,10 @@ static void semantic_enum_declaration(Ast* node, Scope* scope) {
         const char* mem_name = identifier_name(mem->enumerator.name);
         if (!mem_name) continue;
 
-        long value = current;
+        int64_t value = current;
         if (mem->enumerator.value) {
-            long explicit_value = 0;
-            if (eval_constant_integer(mem->enumerator.value, &explicit_value)) {
+            int64_t explicit_value = 0;
+            if (eval_integer_constant(mem->enumerator.value, &explicit_value)) {
                 value = explicit_value;
             }
         }

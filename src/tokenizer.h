@@ -10,7 +10,7 @@ typedef enum {
     TOKEN_UNKNOW,       TOKEN_IDENTIFIER,
     TOKEN_PACKAGE,      TOKEN_IMPORT,
     TOKEN_AS,           TOKEN_VAR,
-    TOKEN_LET,          TOKEN_DEF,
+    TOKEN_CONST,        TOKEN_DEF,
     TOKEN_STRUCT,       TOKEN_ENUM,
     TOKEN_RETURN,       TOKEN_IF,
     TOKEN_ELSE,         TOKEN_CHAR,

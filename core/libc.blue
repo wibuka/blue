@@ -35,66 +35,66 @@ using uintptr_t u64
 using intmax_t i64
 using uintmax_t u64
 
-let INT8_MIN = -128
-let INT8_MAX = 127
-let UINT8_MAX = 255
-let INT16_MIN = -32768
-let INT16_MAX = 32767
-let UINT16_MAX = 65535
-let INT32_MIN = -2147483648
-let INT32_MAX = 2147483647
-let UINT32_MAX = 4294967295
-let INT64_MIN = -9223372036854775808
-let INT64_MAX = 9223372036854775807
-let UINT64_MAX = 0xffffffffffffffff
-let INTPTR_MIN = -9223372036854775808
-let INTPTR_MAX = 9223372036854775807
-let UINTPTR_MAX = 0xffffffffffffffff
-let INTMAX_MIN = -9223372036854775808
-let INTMAX_MAX = 9223372036854775807
-let UINTMAX_MAX = 0xffffffffffffffff
-let PTRDIFF_MIN = -9223372036854775808
-let PTRDIFF_MAX = 9223372036854775807
-let SIZE_MAX = 0xffffffffffffffff
-let WCHAR_MIN = -2147483648
-let WCHAR_MAX = 2147483647
+const INT8_MIN = -128
+const INT8_MAX = 127
+const UINT8_MAX = 255
+const INT16_MIN = -32768
+const INT16_MAX = 32767
+const UINT16_MAX = 65535
+const INT32_MIN = -2147483648
+const INT32_MAX = 2147483647
+const UINT32_MAX = 4294967295
+const INT64_MIN = -9223372036854775808
+const INT64_MAX = 9223372036854775807
+const UINT64_MAX = 0xffffffffffffffff
+const INTPTR_MIN = -9223372036854775808
+const INTPTR_MAX = 9223372036854775807
+const UINTPTR_MAX = 0xffffffffffffffff
+const INTMAX_MIN = -9223372036854775808
+const INTMAX_MAX = 9223372036854775807
+const UINTMAX_MAX = 0xffffffffffffffff
+const PTRDIFF_MIN = -9223372036854775808
+const PTRDIFF_MAX = 9223372036854775807
+const SIZE_MAX = 0xffffffffffffffff
+const WCHAR_MIN = -2147483648
+const WCHAR_MAX = 2147483647
 
 // limits.h — Implementation Limits
-let CHAR_BIT = 8
-let SCHAR_MIN = -128
-let SCHAR_MAX = 127
-let UCHAR_MAX = 255
-let CHAR_MIN = -128 // Linux x86_64: plain char is signed
-let CHAR_MAX = 127
-let SHRT_MIN = -32768
-let SHRT_MAX = 32767
-let USHRT_MAX = 65535
-let INT_MIN = -2147483648
-let INT_MAX = 2147483647
-let UINT_MAX = 4294967295
-let LONG_MIN = -9223372036854775808
-let LONG_MAX = 9223372036854775807
-let ULONG_MAX = 0xffffffffffffffff
-let LLONG_MIN = -9223372036854775808
-let LLONG_MAX = 9223372036854775807
-let ULLONG_MAX = 0xffffffffffffffff
+const CHAR_BIT = 8
+const SCHAR_MIN = -128
+const SCHAR_MAX = 127
+const UCHAR_MAX = 255
+const CHAR_MIN = -128 // Linux x86_64: plain char is signed
+const CHAR_MAX = 127
+const SHRT_MIN = -32768
+const SHRT_MAX = 32767
+const USHRT_MAX = 65535
+const INT_MIN = -2147483648
+const INT_MAX = 2147483647
+const UINT_MAX = 4294967295
+const LONG_MIN = -9223372036854775808
+const LONG_MAX = 9223372036854775807
+const ULONG_MAX = 0xffffffffffffffff
+const LLONG_MIN = -9223372036854775808
+const LLONG_MAX = 9223372036854775807
+const ULLONG_MAX = 0xffffffffffffffff
 
 // float.h — Floating-Point Characteristics (IEEE-754 binary32/64)
-let FLT_RADIX = 2
-let FLT_MANT_DIG = 24
-let DBL_MANT_DIG = 53
-let FLT_DIG = 6
-let DBL_DIG = 15
-let FLT_MIN_EXP = -125
-let DBL_MIN_EXP = -1021
-let FLT_MAX_EXP = 128
-let DBL_MAX_EXP = 1024
-let FLT_MAX = 3.40282347e+38
-let FLT_MIN = 1.17549435e-38
-let FLT_EPSILON = 1.1920929e-07
-let DBL_MAX = 1.7976931348623157e+308
-let DBL_MIN = 2.2250738585072014e-308
-let DBL_EPSILON = 2.2204460492503131e-16
+const FLT_RADIX = 2
+const FLT_MANT_DIG = 24
+const DBL_MANT_DIG = 53
+const FLT_DIG = 6
+const DBL_DIG = 15
+const FLT_MIN_EXP = -125
+const DBL_MIN_EXP = -1021
+const FLT_MAX_EXP = 128
+const DBL_MAX_EXP = 1024
+const FLT_MAX = 3.40282347e+38
+const FLT_MIN = 1.17549435e-38
+const FLT_EPSILON = 1.1920929e-07
+const DBL_MAX = 1.7976931348623157e+308
+const DBL_MIN = 2.2250738585072014e-308
+const DBL_EPSILON = 2.2204460492503131e-16
 
 // stdbool.h / stdalign.h / stdnoreturn.h — Keywords, Not Declarations
 //   C11 `bool`, `true`, `false` map to Blue `bool`, `true`, `false`.
@@ -129,139 +129,139 @@ def toupper(c: i32) -> i32
 // __errno_location instead of declaring a global.
 def __errno_location() -> *i32
 
-let EPERM = 1
-let ENOENT = 2
-let ESRCH = 3
-let EINTR = 4
-let EIO = 5
-let ENXIO = 6
-let E2BIG = 7
-let ENOEXEC = 8
-let EBADF = 9
-let ECHILD = 10
-let EAGAIN = 11
-let EWOULDBLOCK = 11 // Alias of EAGAIN
-let ENOMEM = 12
-let EACCES = 13
-let EFAULT = 14
-let ENOTBLK = 15
-let EBUSY = 16
-let EEXIST = 17
-let EXDEV = 18
-let ENODEV = 19
-let ENOTDIR = 20
-let EISDIR = 21
-let EINVAL = 22
-let ENFILE = 23
-let EMFILE = 24
-let ENOTTY = 25
-let ETXTBSY = 26
-let EFBIG = 27
-let ENOSPC = 28
-let ESPIPE = 29
-let EROFS = 30
-let EMLINK = 31
-let EPIPE = 32
-let EDOM = 33
-let ERANGE = 34
-let EDEADLK = 35
-let EDEADLOCK = 35 // Alias of EDEADLK
-let ENAMETOOLONG = 36
-let ENOLCK = 37
-let ENOSYS = 38
-let ENOTEMPTY = 39
-let ELOOP = 40
-let ENOMSG = 42
-let EIDRM = 43
-let ECHRNG = 44
-let EL2NSYNC = 45
-let EL3HLT = 46
-let EL3RST = 47
-let ELNRNG = 48
-let EUNATCH = 49
-let ENOCSI = 50
-let EL2HLT = 51
-let EBADE = 52
-let EBADR = 53
-let EXFULL = 54
-let ENOANO = 55
-let EBADRQC = 56
-let EBADSLT = 57
-let EBFONT = 59
-let ENOSTR = 60
-let ENODATA = 61
-let ETIME = 62
-let ENOSR = 63
-let ENONET = 64
-let ENOPKG = 65
-let EREMOTE = 66
-let ENOLINK = 67
-let EADV = 68
-let ESRMNT = 69
-let ECOMM = 70
-let EPROTO = 71
-let EMULTIHOP = 72
-let EDOTDOT = 73
-let EBADMSG = 74
-let EOVERFLOW = 75
-let ENOTUNIQ = 76
-let EBADFD = 77
-let EREMCHG = 78
-let ELIBACC = 79
-let ELIBBAD = 80
-let ELIBSCN = 81
-let ELIBMAX = 82
-let ELIBEXEC = 83
-let EILSEQ = 84
-let ERESTART = 85
-let ESTRPIPE = 86
-let EUSERS = 87
-let ENOTSOCK = 88
-let EDESTADDRREQ = 89
-let EMSGSIZE = 90
-let EPROTOTYPE = 91
-let ENOPROTOOPT = 92
-let EPROTONOSUPPORT = 93
-let ESOCKTNOSUPPORT = 94
-let EOPNOTSUPP = 95
-let EPFNOSUPPORT = 96
-let EAFNOSUPPORT = 97
-let EADDRINUSE = 98
-let EADDRNOTAVAIL = 99
-let ENETDOWN = 100
-let ENETUNREACH = 101
-let ENETRESET = 102
-let ECONNABORTED = 103
-let ECONNRESET = 104
-let ENOBUFS = 105
-let EISCONN = 106
-let ENOTCONN = 107
-let ESHUTDOWN = 108
-let ETOOMANYREFS = 109
-let ETIMEDOUT = 110
-let ECONNREFUSED = 111
-let EHOSTDOWN = 112
-let EHOSTUNREACH = 113
-let EALREADY = 114
-let EINPROGRESS = 115
-let ESTALE = 116
-let EUCLEAN = 117
-let ENOTNAM = 118
-let ENAVAIL = 119
-let EISNAM = 120
-let EREMOTEIO = 121
-let EDQUOT = 122
-let ENOMEDIUM = 123
-let EMEDIUMTYPE = 124
-let ECANCELED = 125
-let ENOKEY = 126
-let EKEYEXPIRED = 127
-let EKEYREVOKED = 128
-let EKEYREJECTED = 129
-let EOWNERDEAD = 130
-let ENOTRECOVERABLE = 131
-let ERFKILL = 132
-let EHWPOISON = 133
+const EPERM = 1
+const ENOENT = 2
+const ESRCH = 3
+const EINTR = 4
+const EIO = 5
+const ENXIO = 6
+const E2BIG = 7
+const ENOEXEC = 8
+const EBADF = 9
+const ECHILD = 10
+const EAGAIN = 11
+const EWOULDBLOCK = 11 // Alias of EAGAIN
+const ENOMEM = 12
+const EACCES = 13
+const EFAULT = 14
+const ENOTBLK = 15
+const EBUSY = 16
+const EEXIST = 17
+const EXDEV = 18
+const ENODEV = 19
+const ENOTDIR = 20
+const EISDIR = 21
+const EINVAL = 22
+const ENFILE = 23
+const EMFILE = 24
+const ENOTTY = 25
+const ETXTBSY = 26
+const EFBIG = 27
+const ENOSPC = 28
+const ESPIPE = 29
+const EROFS = 30
+const EMLINK = 31
+const EPIPE = 32
+const EDOM = 33
+const ERANGE = 34
+const EDEADLK = 35
+const EDEADLOCK = 35 // Alias of EDEADLK
+const ENAMETOOLONG = 36
+const ENOLCK = 37
+const ENOSYS = 38
+const ENOTEMPTY = 39
+const ELOOP = 40
+const ENOMSG = 42
+const EIDRM = 43
+const ECHRNG = 44
+const EL2NSYNC = 45
+const EL3HLT = 46
+const EL3RST = 47
+const ELNRNG = 48
+const EUNATCH = 49
+const ENOCSI = 50
+const EL2HLT = 51
+const EBADE = 52
+const EBADR = 53
+const EXFULL = 54
+const ENOANO = 55
+const EBADRQC = 56
+const EBADSLT = 57
+const EBFONT = 59
+const ENOSTR = 60
+const ENODATA = 61
+const ETIME = 62
+const ENOSR = 63
+const ENONET = 64
+const ENOPKG = 65
+const EREMOTE = 66
+const ENOLINK = 67
+const EADV = 68
+const ESRMNT = 69
+const ECOMM = 70
+const EPROTO = 71
+const EMULTIHOP = 72
+const EDOTDOT = 73
+const EBADMSG = 74
+const EOVERFLOW = 75
+const ENOTUNIQ = 76
+const EBADFD = 77
+const EREMCHG = 78
+const ELIBACC = 79
+const ELIBBAD = 80
+const ELIBSCN = 81
+const ELIBMAX = 82
+const ELIBEXEC = 83
+const EILSEQ = 84
+const ERESTART = 85
+const ESTRPIPE = 86
+const EUSERS = 87
+const ENOTSOCK = 88
+const EDESTADDRREQ = 89
+const EMSGSIZE = 90
+const EPROTOTYPE = 91
+const ENOPROTOOPT = 92
+const EPROTONOSUPPORT = 93
+const ESOCKTNOSUPPORT = 94
+const EOPNOTSUPP = 95
+const EPFNOSUPPORT = 96
+const EAFNOSUPPORT = 97
+const EADDRINUSE = 98
+const EADDRNOTAVAIL = 99
+const ENETDOWN = 100
+const ENETUNREACH = 101
+const ENETRESET = 102
+const ECONNABORTED = 103
+const ECONNRESET = 104
+const ENOBUFS = 105
+const EISCONN = 106
+const ENOTCONN = 107
+const ESHUTDOWN = 108
+const ETOOMANYREFS = 109
+const ETIMEDOUT = 110
+const ECONNREFUSED = 111
+const EHOSTDOWN = 112
+const EHOSTUNREACH = 113
+const EALREADY = 114
+const EINPROGRESS = 115
+const ESTALE = 116
+const EUCLEAN = 117
+const ENOTNAM = 118
+const ENAVAIL = 119
+const EISNAM = 120
+const EREMOTEIO = 121
+const EDQUOT = 122
+const ENOMEDIUM = 123
+const EMEDIUMTYPE = 124
+const ECANCELED = 125
+const ENOKEY = 126
+const EKEYEXPIRED = 127
+const EKEYREVOKED = 128
+const EKEYREJECTED = 129
+const EOWNERDEAD = 130
+const ENOTRECOVERABLE = 131
+const ERFKILL = 132
+const EHWPOISON = 133
 
 // fenv.h — Floating-Point Environment (symbols live in libm: see header)
 // NOTE: FE_DFL_ENV is a pointer macro, not a symbol: omitted.
@@ -277,16 +277,16 @@ def fesetenv(envp: *u0) -> i32
 def feholdexcept(envp: *u0) -> i32
 def feupdateenv(envp: *u0) -> i32
 
-let FE_DIVBYZERO = 4
-let FE_INEXACT = 32
-let FE_INVALID = 1
-let FE_OVERFLOW = 8
-let FE_UNDERFLOW = 16
-let FE_ALL_EXCEPT = 61
-let FE_TONEAREST = 0
-let FE_UPWARD = 2048
-let FE_DOWNWARD = 1024
-let FE_TOWARDZERO = 3072
+const FE_DIVBYZERO = 4
+const FE_INEXACT = 32
+const FE_INVALID = 1
+const FE_OVERFLOW = 8
+const FE_UNDERFLOW = 16
+const FE_ALL_EXCEPT = 61
+const FE_TONEAREST = 0
+const FE_UPWARD = 2048
+const FE_DOWNWARD = 1024
+const FE_TOWARDZERO = 3072
 
 // inttypes.h — Greatest-Width Integers and Format Macros (LP64)
 struct Imaxdiv {
@@ -300,22 +300,22 @@ def strtoumax(str: *u8, endptr: **u8, base: i32) -> u64
 def wcstoimax(str: *wchar_t, endptr: **wchar_t, base: i32) -> i64
 def wcstoumax(str: *wchar_t, endptr: **wchar_t, base: i32) -> u64
 // printf/scanf format macros for LP64 (usable as plain strings)
-let PRId8 = "d"
-let PRIi8 = "i"
-let PRIu8 = "u"
-let PRIx8 = "x"
-let PRId16 = "d"
-let PRIu16 = "u"
-let PRId32 = "d"
-let PRIu32 = "u"
-let PRIx32 = "x"
-let PRId64 = "ld"
-let PRIi64 = "li"
-let PRIu64 = "lu"
-let PRIx64 = "lx"
-let PRIdMAX = "ld"
-let PRIuMAX = "lu"
-let PRIdPTR = "ld"
+const PRId8 = "d"
+const PRIi8 = "i"
+const PRIu8 = "u"
+const PRIx8 = "x"
+const PRId16 = "d"
+const PRIu16 = "u"
+const PRId32 = "d"
+const PRIu32 = "u"
+const PRIx32 = "x"
+const PRId64 = "ld"
+const PRIi64 = "li"
+const PRIu64 = "lu"
+const PRIx64 = "lx"
+const PRIdMAX = "ld"
+const PRIuMAX = "lu"
+const PRIdPTR = "ld"
 
 // locale.h — Localization
 struct lconv {
@@ -347,13 +347,13 @@ struct lconv {
 def setlocale(category: i32, locale: *u8) -> *u8
 def localeconv() -> *lconv
 
-let LC_CTYPE = 0
-let LC_NUMERIC = 1
-let LC_TIME = 2
-let LC_COLLATE = 3
-let LC_MONETARY = 4
-let LC_MESSAGES = 5
-let LC_ALL = 6
+const LC_CTYPE = 0
+const LC_NUMERIC = 1
+const LC_TIME = 2
+const LC_COLLATE = 3
+const LC_MONETARY = 4
+const LC_MESSAGES = 5
+const LC_ALL = 6
 
 // stdio.h — Standard Input/Output
 
@@ -479,20 +479,20 @@ def putwchar(c: i32) -> i32
 def ungetwc(c: i32, stream: *FILE) -> i32
 
 // Constants & Macros
-let _IOFBF = 0
-let _IOLBF = 1
-let _IONBF = 2
+const _IOFBF = 0
+const _IOLBF = 1
+const _IONBF = 2
 
-let SEEK_SET = 0
-let SEEK_CUR = 1
-let SEEK_END = 2
+const SEEK_SET = 0
+const SEEK_CUR = 1
+const SEEK_END = 2
 
-let EOF = -1
-let BUFSIZ = 8192
-let FILENAME_MAX = 4096
-let FOPEN_MAX = 16
-let TMP_MAX = 238328
-let L_tmpnam = 20
+const EOF = -1
+const BUFSIZ = 8192
+const FILENAME_MAX = 4096
+const FOPEN_MAX = 16
+const TMP_MAX = 238328
+const L_tmpnam = 20
 
 // stdlib.h — General Utilities
 
@@ -566,7 +566,7 @@ def wcstoul(str: *wchar_t, endptr: **wchar_t, base: i32) -> u64
 // Random Numbers
 def rand() -> i32
 def srand(seed: u32)
-let RAND_MAX = 2147483647 // Min guaranteed: 32767
+const RAND_MAX = 2147483647 // Min guaranteed: 32767
 // POSIX random-number APIs
 def rand_r(seed: *u32) -> i32
 def random() -> i64
@@ -602,10 +602,10 @@ def realpath(path: *u8, resolved: *u8) -> *u8
 def getsubopt(optionp: **u8, tokens: **u8, valuep: **u8) -> i32
 
 // Constants & Alignment
-let EXIT_SUCCESS = 0
-let EXIT_FAILURE = 1
-let EXIT_QUICK_SUCCESS = 0
-let MB_CUR_MAX = 6 // Linux UTF-8 locale; locale-dependent in general
+const EXIT_SUCCESS = 0
+const EXIT_FAILURE = 1
+const EXIT_QUICK_SUCCESS = 0
+const MB_CUR_MAX = 6 // Linux UTF-8 locale; locale-dependent in general
 
 // string.h — String and Memory Operations
 
@@ -658,7 +658,7 @@ def ffsll(x: i64) -> i32
 // math.h — Mathematical Functions (symbols live in libm: see header)
 // Classification macros isfinite/signbit/fpclassify have no symbols and
 // are omitted; isnan/isinf below ARE real (weak) libc symbols. The M_*
-// constants below are plain doubles, safe as `let` bindings.
+// constants below are plain doubles, safe as `const` bindings.
 
 // Trigonometric & Hyperbolic
 def sin(x: f64) -> f64
@@ -797,19 +797,19 @@ def scalbnf(x: f32, n: i32) -> f32
 // NOTE: *l (long double) variants omitted (no Blue ABI type).
 
 // BSD/GNU Math Constants (plain doubles)
-let M_E = 2.71828182845904523536
-let M_LOG2E = 1.44269504088896340736
-let M_LOG10E = 0.43429448190325182765
-let M_LN2 = 0.69314718055994530942
-let M_LN10 = 2.30258509299404568402
-let M_PI = 3.14159265358979323846
-let M_PI_2 = 1.57079632679489661923
-let M_PI_4 = 0.78539816339744830962
-let M_1_PI = 0.31830988618379067154
-let M_2_PI = 0.63661977236758134308
-let M_2_SQRTPI = 1.12837916709551257390
-let M_SQRT2 = 1.41421356237309504880
-let M_SQRT1_2 = 0.70710678118654752440
+const M_E = 2.71828182845904523536
+const M_LOG2E = 1.44269504088896340736
+const M_LOG10E = 0.43429448190325182765
+const M_LN2 = 0.69314718055994530942
+const M_LN10 = 2.30258509299404568402
+const M_PI = 3.14159265358979323846
+const M_PI_2 = 1.57079632679489661923
+const M_PI_4 = 0.78539816339744830962
+const M_1_PI = 0.31830988618379067154
+const M_2_PI = 0.63661977236758134308
+const M_2_SQRTPI = 1.12837916709551257390
+const M_SQRT2 = 1.41421356237309504880
+const M_SQRT1_2 = 0.70710678118654752440
 
 // setjmp.h — Non-Local Jumps
 // jmp_buf holds the 8 callee-saved registers on x86_64; plain setjmp
@@ -836,40 +836,40 @@ using sighandler_t (i32) -> u0
 def signal(sig: i32, handler: sighandler_t) -> sighandler_t
 def raise(sig: i32) -> i32
 // Signal numbers (Linux x86_64)
-let SIGHUP = 1
-let SIGINT = 2
-let SIGQUIT = 3
-let SIGILL = 4
-let SIGTRAP = 5
-let SIGABRT = 6
-let SIGIOT = 6 // Alias of SIGABRT
-let SIGBUS = 7
-let SIGFPE = 8
-let SIGKILL = 9
-let SIGUSR1 = 10
-let SIGSEGV = 11
-let SIGUSR2 = 12
-let SIGPIPE = 13
-let SIGALRM = 14
-let SIGTERM = 15
-let SIGSTKFLT = 16
-let SIGCHLD = 17
-let SIGCONT = 18
-let SIGSTOP = 19
-let SIGTSTP = 20
-let SIGTTIN = 21
-let SIGTTOU = 22
-let SIGURG = 23
-let SIGXCPU = 24
-let SIGXFSZ = 25
-let SIGVTALRM = 26
-let SIGPROF = 27
-let SIGWINCH = 28
-let SIGIO = 29
-let SIGPOLL = 29 // Alias of SIGIO
-let SIGPWR = 30
-let SIGSYS = 31
-let SIGRTMIN = 32
+const SIGHUP = 1
+const SIGINT = 2
+const SIGQUIT = 3
+const SIGILL = 4
+const SIGTRAP = 5
+const SIGABRT = 6
+const SIGIOT = 6 // Alias of SIGABRT
+const SIGBUS = 7
+const SIGFPE = 8
+const SIGKILL = 9
+const SIGUSR1 = 10
+const SIGSEGV = 11
+const SIGUSR2 = 12
+const SIGPIPE = 13
+const SIGALRM = 14
+const SIGTERM = 15
+const SIGSTKFLT = 16
+const SIGCHLD = 17
+const SIGCONT = 18
+const SIGSTOP = 19
+const SIGTSTP = 20
+const SIGTTIN = 21
+const SIGTTOU = 22
+const SIGURG = 23
+const SIGXCPU = 24
+const SIGXFSZ = 25
+const SIGVTALRM = 26
+const SIGPROF = 27
+const SIGWINCH = 28
+const SIGIO = 29
+const SIGPOLL = 29 // Alias of SIGIO
+const SIGPWR = 30
+const SIGSYS = 31
+const SIGRTMIN = 32
 
 // stdarg.h — Variable Arguments
 // va_start/va_arg/va_copy/va_end are compiler macros with no symbols and
@@ -935,17 +935,17 @@ def nanosleep(req: *timespec, rem: *timespec) -> i32
 def tzset()
 // NOTE: daylight/timezone/tzname are globals: omitted (see header).
 
-let CLOCKS_PER_SEC = 1000000
-let TIME_UTC = 1
-let CLOCK_REALTIME = 0
-let CLOCK_MONOTONIC = 1
-let CLOCK_PROCESS_CPUTIME_ID = 2
-let CLOCK_THREAD_CPUTIME_ID = 3
-let CLOCK_MONOTONIC_RAW = 4
-let CLOCK_REALTIME_COARSE = 5
-let CLOCK_MONOTONIC_COARSE = 6
-let CLOCK_BOOTTIME = 7
-let TIMER_ABSTIME = 1
+const CLOCKS_PER_SEC = 1000000
+const TIME_UTC = 1
+const CLOCK_REALTIME = 0
+const CLOCK_MONOTONIC = 1
+const CLOCK_PROCESS_CPUTIME_ID = 2
+const CLOCK_THREAD_CPUTIME_ID = 3
+const CLOCK_MONOTONIC_RAW = 4
+const CLOCK_REALTIME_COARSE = 5
+const CLOCK_MONOTONIC_COARSE = 6
+const CLOCK_BOOTTIME = 7
+const TIMER_ABSTIME = 1
 
 // uchar.h — UTF-16/32 Restartable Conversion (C11)
 using char16_t u16
@@ -991,7 +991,7 @@ def mbrtowc(pwc: *wchar_t, s: *u8, n: usize, ps: *mbstate_t) -> usize
 def wcrtomb(s: *u8, wc: i32, ps: *mbstate_t) -> usize
 def mbsrtowcs(dst: *wchar_t, src: **u8, len: usize, ps: *mbstate_t) -> usize
 def wcsrtombs(dst: *u8, src: **wchar_t, len: usize, ps: *mbstate_t) -> usize
-let WEOF = -1
+const WEOF = -1
 
 // wctype.h — Wide-Character Classification
 def iswalnum(wc: i32) -> i32
@@ -1130,67 +1130,67 @@ def fpathconf(fd: i32, name: i32) -> i64
 def confstr(name: i32, buf: *u8, len: usize) -> usize
 
 // Standard File Descriptors
-let STDIN_FILENO = 0
-let STDOUT_FILENO = 1
-let STDERR_FILENO = 2
+const STDIN_FILENO = 0
+const STDOUT_FILENO = 1
+const STDERR_FILENO = 2
 
 // Access Modes
-let F_OK = 0
-let X_OK = 1
-let W_OK = 2
-let R_OK = 4
+const F_OK = 0
+const X_OK = 1
+const W_OK = 2
+const R_OK = 4
 
 // sysconf/pathconf Names (Linux; frequently used subset)
-let _SC_CLK_TCK = 2
-let _SC_OPEN_MAX = 4
-let _SC_PAGESIZE = 30
-let _SC_PAGE_SIZE = 30
-let _SC_NPROCESSORS_ONLN = 84
-let _PC_PATH_MAX = 4
-let _PC_NAME_MAX = 3
+const _SC_CLK_TCK = 2
+const _SC_OPEN_MAX = 4
+const _SC_PAGESIZE = 30
+const _SC_PAGE_SIZE = 30
+const _SC_NPROCESSORS_ONLN = 84
+const _PC_PATH_MAX = 4
+const _PC_NAME_MAX = 3
 
 // fcntl.h — File Control (flag values: Linux x86_64)
 def open(path: *u8, flags: i32, ...) -> i32
 def creat(path: *u8, mode: u32) -> i32
 def fcntl(fd: i32, cmd: i32, ...) -> i32
 
-let O_ACCMODE = 3
-let O_RDONLY = 0
-let O_WRONLY = 1
-let O_RDWR = 2
-let O_CREAT = 64
-let O_EXCL = 128
-let O_NOCTTY = 256
-let O_TRUNC = 512
-let O_APPEND = 1024
-let O_NONBLOCK = 2048
-let O_DSYNC = 4096
-let O_ASYNC = 8192
-let O_DIRECT = 16384
-let O_LARGEFILE = 0 // x86_64: 64-bit offsets are implicit
-let O_DIRECTORY = 65536
-let O_NOFOLLOW = 131072
-let O_NOATIME = 262144
-let O_CLOEXEC = 524288
-let O_SYNC = 1052672
-let O_PATH = 2097152
-let O_TMPFILE = 4259840
-let F_DUPFD = 0
-let F_GETFD = 1
-let F_SETFD = 2
-let F_GETFL = 3
-let F_SETFL = 4
-let F_GETLK = 5
-let F_SETLK = 6
-let F_SETLKW = 7
-let F_SETOWN = 8
-let F_GETOWN = 9
-let FD_CLOEXEC = 1
-let AT_FDCWD = -100
-let AT_SYMLINK_NOFOLLOW = 256
-let AT_REMOVEDIR = 512
-let AT_SYMLINK_FOLLOW = 1024
-let AT_EMPTY_PATH = 4096
+const O_ACCMODE = 3
+const O_RDONLY = 0
+const O_WRONLY = 1
+const O_RDWR = 2
+const O_CREAT = 64
+const O_EXCL = 128
+const O_NOCTTY = 256
+const O_TRUNC = 512
+const O_APPEND = 1024
+const O_NONBLOCK = 2048
+const O_DSYNC = 4096
+const O_ASYNC = 8192
+const O_DIRECT = 16384
+const O_LARGEFILE = 0 // x86_64: 64-bit offsets are implicit
+const O_DIRECTORY = 65536
+const O_NOFOLLOW = 131072
+const O_NOATIME = 262144
+const O_CLOEXEC = 524288
+const O_SYNC = 1052672
+const O_PATH = 2097152
+const O_TMPFILE = 4259840
+const F_DUPFD = 0
+const F_GETFD = 1
+const F_SETFD = 2
+const F_GETFL = 3
+const F_SETFL = 4
+const F_GETLK = 5
+const F_SETLK = 6
+const F_SETLKW = 7
+const F_SETOWN = 8
+const F_GETOWN = 9
+const FD_CLOEXEC = 1
+const AT_FDCWD = -100
+const AT_SYMLINK_NOFOLLOW = 256
+const AT_REMOVEDIR = 512
+const AT_SYMLINK_FOLLOW = 1024
+const AT_EMPTY_PATH = 4096
 
 // dirent.h — Directory Entries (Linux x86_64 layout)
 struct DIR
@@ -1209,14 +1209,14 @@ def seekdir(dir: *DIR, loc: i64)
 def telldir(dir: *DIR) -> i64
 def dirfd(dir: *DIR) -> i32
 
-let DT_UNKNOWN = 0
-let DT_FIFO = 1
-let DT_CHR = 2
-let DT_DIR = 4
-let DT_BLK = 6
-let DT_REG = 8
-let DT_LNK = 10
-let DT_SOCK = 12
+const DT_UNKNOWN = 0
+const DT_FIFO = 1
+const DT_CHR = 2
+const DT_DIR = 4
+const DT_BLK = 6
+const DT_REG = 8
+const DT_LNK = 10
+const DT_SOCK = 12
 
 // sys/stat.h — File Status (Linux x86_64 layout, flattened)
 // NOTE: Blue keeps types and functions in one namespace, so the C struct
@@ -1255,30 +1255,30 @@ def umask(mask: u32) -> u32
 // NOTE: S_ISREG/S_ISDIR/... are bitmask macros; Blue has no bitwise
 // operators, so compare (mode & S_IFMT) idioms are unavailable. The raw
 // S_IFMT file-type and permission constants are declared.
-let S_IFMT = 61440
-let S_IFSOCK = 49152
-let S_IFLNK = 40960
-let S_IFREG = 32768
-let S_IFBLK = 24576
-let S_IFDIR = 16384
-let S_IFCHR = 8192
-let S_IFIFO = 4096
-let S_ISUID = 2048
-let S_ISGID = 1024
-let S_ISVTX = 512
-let S_IRUSR = 256
-let S_IWUSR = 128
-let S_IXUSR = 64
-let S_IRGRP = 32
-let S_IWGRP = 16
-let S_IXGRP = 8
-let S_IROTH = 4
-let S_IWOTH = 2
-let S_IXOTH = 1
+const S_IFMT = 61440
+const S_IFSOCK = 49152
+const S_IFLNK = 40960
+const S_IFREG = 32768
+const S_IFBLK = 24576
+const S_IFDIR = 16384
+const S_IFCHR = 8192
+const S_IFIFO = 4096
+const S_ISUID = 2048
+const S_ISGID = 1024
+const S_ISVTX = 512
+const S_IRUSR = 256
+const S_IWUSR = 128
+const S_IXUSR = 64
+const S_IRGRP = 32
+const S_IWGRP = 16
+const S_IXGRP = 8
+const S_IROTH = 4
+const S_IWOTH = 2
+const S_IXOTH = 1
 
 // sys/mman.h — Memory Mapping (values: Linux x86_64)
 // NOTE: MAP_FAILED is (void *)-1. Spell the check as
-// `(ptr as i64) == -1`; no `let` can carry a pointer value here.
+// `(ptr as i64) == -1`; no `const` can carry a pointer value here.
 def mmap(addr: *u0, len: usize, prot: i32, flags: i32, fd: i32, offset: i64) -> *u0
 def munmap(addr: *u0, len: usize) -> i32
 def mprotect(addr: *u0, len: usize, prot: i32) -> i32
@@ -1287,19 +1287,19 @@ def madvise(addr: *u0, len: usize, advice: i32) -> i32
 def mlock(addr: *u0, len: usize) -> i32
 def munlock(addr: *u0, len: usize) -> i32
 
-let PROT_NONE = 0
-let PROT_READ = 1
-let PROT_WRITE = 2
-let PROT_EXEC = 4
-let MAP_SHARED = 1
-let MAP_PRIVATE = 2
-let MAP_FIXED = 16
-let MAP_ANONYMOUS = 32
-let MS_ASYNC = 1
-let MS_SYNC = 4
-let MS_INVALIDATE = 2
-let MADV_NORMAL = 0
-let MADV_DONTNEED = 4
+const PROT_NONE = 0
+const PROT_READ = 1
+const PROT_WRITE = 2
+const PROT_EXEC = 4
+const MAP_SHARED = 1
+const MAP_PRIVATE = 2
+const MAP_FIXED = 16
+const MAP_ANONYMOUS = 32
+const MS_ASYNC = 1
+const MS_SYNC = 4
+const MS_INVALIDATE = 2
+const MADV_NORMAL = 0
+const MADV_DONTNEED = 4
 
 // sys/time.h — Time from the System Clock
 def gettimeofday(tp: *timeval, tzp: *u0) -> i32 // tzp obsolete: pass nil
@@ -1311,18 +1311,18 @@ struct itimerval {
 }
 def getitimer(which: i32, curr: *itimerval) -> i32
 def setitimer(which: i32, newval: *itimerval, oldval: *itimerval) -> i32
-let ITIMER_REAL = 0
-let ITIMER_VIRTUAL = 1
-let ITIMER_PROF = 2
+const ITIMER_REAL = 0
+const ITIMER_VIRTUAL = 1
+const ITIMER_PROF = 2
 
 // sys/wait.h — Wait for Child Processes
 def wait(status: *i32) -> i32
 def waitpid(pid: i32, status: *i32, options: i32) -> i32
 // NOTE: WIFEXITED/WEXITSTATUS/... are bit-manipulation macros and cannot
 // be expressed (no bitwise operators). Raw option/status constants:
-let WNOHANG = 1
-let WUNTRACED = 2
-let WCONTINUED = 8
+const WNOHANG = 1
+const WUNTRACED = 2
+const WCONTINUED = 8
 
 // poll.h — Synchronous I/O Multiplexing
 struct pollfd {
@@ -1331,13 +1331,13 @@ struct pollfd {
     revents: i16
 }
 def poll(fds: *pollfd, nfds: u64, timeout: i32) -> i32
-let POLLIN = 1
-let POLLPRI = 2
-let POLLOUT = 4
-let POLLERR = 8
-let POLLHUP = 16
-let POLLNVAL = 32
-let POLLRDHUP = 8192
+const POLLIN = 1
+const POLLPRI = 2
+const POLLOUT = 4
+const POLLERR = 8
+const POLLHUP = 16
+const POLLNVAL = 32
+const POLLRDHUP = 8192
 
 // sys/select.h — More I/O Multiplexing
 // fd_set is a 1024-bit mask; FD_SET/FD_ISSET/... are bit macros without
@@ -1370,16 +1370,16 @@ def sigprocmask(how: i32, set: *sigset_t, oldset: *sigset_t) -> i32
 def sigpending(set: *sigset_t) -> i32
 def sigsuspend(mask: *sigset_t) -> i32
 def psignal(sig: i32, s: *u8)
-let SIG_BLOCK = 0
-let SIG_UNBLOCK = 1
-let SIG_SETMASK = 2
-let SA_NOCLDSTOP = 1
-let SA_NOCLDWAIT = 2
-let SA_SIGINFO = 4
-let SA_ONSTACK = 134217728
-let SA_RESTART = 268435456
-let SA_NODEFER = 1073741824
-let SA_RESETHAND = 2147483648
+const SIG_BLOCK = 0
+const SIG_UNBLOCK = 1
+const SIG_SETMASK = 2
+const SA_NOCLDSTOP = 1
+const SA_NOCLDWAIT = 2
+const SA_SIGINFO = 4
+const SA_ONSTACK = 134217728
+const SA_RESTART = 268435456
+const SA_NODEFER = 1073741824
+const SA_RESETHAND = 2147483648
 
 // sched.h — Execution Scheduling
 struct sched_param {
@@ -1392,9 +1392,9 @@ def sched_getscheduler(pid: i32) -> i32
 def sched_setscheduler(pid: i32, policy: i32, param: *sched_param) -> i32
 def sched_getparam(pid: i32, param: *sched_param) -> i32
 def sched_setparam(pid: i32, param: *sched_param) -> i32
-let SCHED_OTHER = 0
-let SCHED_FIFO = 1
-let SCHED_RR = 2
+const SCHED_OTHER = 0
+const SCHED_FIFO = 1
+const SCHED_RR = 2
 
 // pthread.h — Threads (opaque where the layout is arch-private)
 // Static initializers (PTHREAD_MUTEX_INITIALIZER, ...) are C macros over
@@ -1459,7 +1459,7 @@ def pthread_spin_destroy(lock: *pthread_spinlock_t) -> i32
 def pthread_spin_lock(lock: *pthread_spinlock_t) -> i32
 def pthread_spin_trylock(lock: *pthread_spinlock_t) -> i32
 def pthread_spin_unlock(lock: *pthread_spinlock_t) -> i32
-let PTHREAD_ONCE_INIT = 0
+const PTHREAD_ONCE_INIT = 0
 
 // semaphore.h — Counting Semaphores (opaque in C, 32 bytes on Linux)
 struct sem_t {
@@ -1528,37 +1528,37 @@ def ntohl(netlong: u32) -> u32
 def inet_pton(af: i32, src: *u8, dst: *u0) -> i32
 def inet_ntop(af: i32, src: *u0, dst: *u8, size: u32) -> *u8
 
-let AF_UNSPEC = 0
-let AF_UNIX = 1
-let AF_INET = 2
-let AF_INET6 = 10
-let AF_NETLINK = 16
-let AF_PACKET = 17
-let SOCK_STREAM = 1
-let SOCK_DGRAM = 2
-let SOCK_RAW = 3
-let SOCK_SEQPACKET = 5
-let SOCK_NONBLOCK = 2048
-let SOCK_CLOEXEC = 524288
-let IPPROTO_IP = 0
-let IPPROTO_ICMP = 1
-let IPPROTO_TCP = 6
-let IPPROTO_UDP = 17
-let IPPROTO_IPV6 = 41
-let SOL_SOCKET = 1
-let SO_REUSEADDR = 2
-let SO_TYPE = 3
-let SO_ERROR = 4
-let SO_BROADCAST = 6
-let SO_SNDBUF = 7
-let SO_RCVBUF = 8
-let SO_KEEPALIVE = 9
-let SHUT_RD = 0
-let SHUT_WR = 1
-let SHUT_RDWR = 2
-let INADDR_ANY = 0
-let INADDR_BROADCAST = 4294967295
-let INADDR_LOOPBACK = 2130706433
+const AF_UNSPEC = 0
+const AF_UNIX = 1
+const AF_INET = 2
+const AF_INET6 = 10
+const AF_NETLINK = 16
+const AF_PACKET = 17
+const SOCK_STREAM = 1
+const SOCK_DGRAM = 2
+const SOCK_RAW = 3
+const SOCK_SEQPACKET = 5
+const SOCK_NONBLOCK = 2048
+const SOCK_CLOEXEC = 524288
+const IPPROTO_IP = 0
+const IPPROTO_ICMP = 1
+const IPPROTO_TCP = 6
+const IPPROTO_UDP = 17
+const IPPROTO_IPV6 = 41
+const SOL_SOCKET = 1
+const SO_REUSEADDR = 2
+const SO_TYPE = 3
+const SO_ERROR = 4
+const SO_BROADCAST = 6
+const SO_SNDBUF = 7
+const SO_RCVBUF = 8
+const SO_KEEPALIVE = 9
+const SHUT_RD = 0
+const SHUT_WR = 1
+const SHUT_RDWR = 2
+const INADDR_ANY = 0
+const INADDR_BROADCAST = 4294967295
+const INADDR_LOOPBACK = 2130706433
 
 // dlfcn.h — Dynamic Loading
 def dlopen(path: *u8, mode: i32) -> *u0
@@ -1572,9 +1572,9 @@ struct Dl_info {
     saddr: *u0
 }
 def dladdr(addr: *u0, info: *Dl_info) -> i32
-let RTLD_LAZY = 1
-let RTLD_NOW = 2
-let RTLD_LOCAL = 0
-let RTLD_GLOBAL = 256
-let RTLD_NOLOAD = 4
-let RTLD_NODELETE = 4096
+const RTLD_LAZY = 1
+const RTLD_NOW = 2
+const RTLD_LOCAL = 0
+const RTLD_GLOBAL = 256
+const RTLD_NOLOAD = 4
+const RTLD_NODELETE = 4096

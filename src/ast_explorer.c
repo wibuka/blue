@@ -158,7 +158,7 @@ static cJSON *ast_to_json(Ast *node) {
             break;
         }
         case AST_ARRAY_TYPE: {
-            cJSON_AddNumberToObject(obj, "length", (double)node->array_type.length);
+            cJSON_AddItemToObject(obj, "length", ast_to_json(node->array_type.length));
             cJSON_AddItemToObject(obj, "elementType", ast_to_json(node->array_type.type));
             break;
         }

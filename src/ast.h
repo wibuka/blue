@@ -250,7 +250,7 @@ typedef struct Ast {
         } literal_binary;
 
         struct {
-            long value;
+            int64_t value;
         } literal_integer;
 
         struct {
@@ -276,7 +276,7 @@ typedef struct Ast {
 
         struct {
             Ast* type;
-            size_t length;
+            Ast* length;
         } array_type;
 
         struct {

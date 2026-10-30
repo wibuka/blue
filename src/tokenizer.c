@@ -60,7 +60,7 @@ TokenType get_token_type(const char* str) {
     if (is_float(str)) return TOKEN_FLOAT;
 
     MATCH("var",      VAR);       
-    MATCH("let",      LET);
+    MATCH("const",    CONST);
     MATCH("def",      DEF);
     MATCH("struct",   STRUCT);
     MATCH("enum",     ENUM);
@@ -96,7 +96,7 @@ const char *token_type_name(TokenType type) {
     T(IF);
     T(IN);          T(OR);
     T(AS);          T(DEF);
-    T(LET);         T(VAR);          T(FOR);          T(NIL);
+    T(CONST);       T(VAR);          T(FOR);          T(NIL);
     T(AND);         T(CHAR);         T(ELSE);         T(LOOP);         T(FLOAT);
     T(RANGE);       T(ARROW);        T(BREAK);        T(IMPORT);       T(RETURN);       T(STRING);
     T(STRUCT);      T(SYMBOL);       T(UNKNOW);       T(ADDRESS);      T(NEWLINE);      T(BOOLEAN);      T(INTEGER);

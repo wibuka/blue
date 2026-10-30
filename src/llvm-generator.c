@@ -263,6 +263,7 @@ static void set_reference(Ast* node, LLVMValueRef value, LLVMTypeRef type) {
 
 void llvm_block(Ast* node, bool is_global);
 void llvm_statement(Ast* node, bool is_global);
+LLVMValueRef llvm_literal(Ast* node);
 LLVMValueRef llvm_call_expression(Ast* node, bool is_global);
 LLVMValueRef llvm_binary_expression(Ast* node, bool is_global);
 LLVMValueRef llvm_expression(Ast* node, bool is_global);
@@ -545,9 +546,13 @@ LLVMValueRef llvm_variable_declaration(Ast* node, bool is_global)
 
         LLVMSetInitializer(value, init);
     } else {
-        value = llvm_build_local_alloca(type, identifier_name(node));
-        
-        LLVMBuildStore(env.builder, init, value);
+        if (node->variable_declaration.is_constant && is_numeric_type(TypeData_of(node))) {
+            value = init;
+        }
+        else {
+            value = llvm_build_local_alloca(type, identifier_name(node));
+            LLVMBuildStore(env.builder, init, value);
+        }
     }
 
     set_reference(node, value, type);

@@ -144,7 +144,7 @@ TypeData* TypeData_array(TypeData* element_type, size_t length) {
         .struct_def = NULL,
         .array = {
             .element_type = element_type,
-            .length = length
+            .length       = length
         }
     };
     return type_intern(val);

@@ -831,7 +831,7 @@ Ast* parser_statement() {
     else if (token.type == TOKEN_DEF) {
         return parser_function_declaration();
     }
-    else if (token.type == TOKEN_VAR || token.type == TOKEN_LET) {
+    else if (token.type == TOKEN_VAR || token.type == TOKEN_CONST) {
         return parser_variable_declaration();
     }
     else if (token.type == TOKEN_LOOP) {
@@ -970,16 +970,10 @@ Ast* parse_type() {
             Ast* elem_type = parse_type();
 
             if (size_expr != NULL) {
-                size_t length = 0;
-                if (size_expr->type == AST_LITERAL_INTEGER) {
-                    length = (size_t)size_expr->literal_integer.value;
-                } else {
-                    log_source_error(size_expr->source, ERROR_SYNTAX, "Array size must be a constant integer");
-                }
                 Ast* array_node = Ast_create(AST_ARRAY_TYPE);
                 array_node->source = bracket_site;
-                array_node->array_type.length       = length;
-                array_node->array_type.type = elem_type;
+                array_node->array_type.type   = elem_type;
+                array_node->array_type.length = size_expr;
                 return array_node;
             } else {
                 Ast* slice_node = Ast_create(AST_SLICE_TYPE);
@@ -1383,7 +1377,7 @@ Ast* parser_struct_declaration() {
 }
 
 Ast* parser_variable_declaration() {
-    bool constant = token_current().type == TOKEN_LET;
+    bool constant = token_current().type == TOKEN_CONST;
     Ast* variable_node = Ast_create(AST_VARIABLE_DECLARATION);
     add_attributes(variable_node);
     token_next();

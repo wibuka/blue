@@ -42,57 +42,57 @@ struct gz_header {
 // Constants & Enums
 
 // Flush values
-let Z_NO_FLUSH = 0
-let Z_PARTIAL_FLUSH = 1
-let Z_SYNC_FLUSH = 2
-let Z_FULL_FLUSH = 3
-let Z_FINISH = 4
-let Z_BLOCK = 5
-let Z_TREES = 6
+const Z_NO_FLUSH = 0
+const Z_PARTIAL_FLUSH = 1
+const Z_SYNC_FLUSH = 2
+const Z_FULL_FLUSH = 3
+const Z_FINISH = 4
+const Z_BLOCK = 5
+const Z_TREES = 6
 
 // Return codes
-let Z_OK = 0
-let Z_STREAM_END = 1
-let Z_NEED_DICT = 2
-let Z_ERRNO = -1
-let Z_STREAM_ERROR = -2
-let Z_DATA_ERROR = -3
-let Z_MEM_ERROR = -4
-let Z_BUF_ERROR = -5
-let Z_VERSION_ERROR = -6
+const Z_OK = 0
+const Z_STREAM_END = 1
+const Z_NEED_DICT = 2
+const Z_ERRNO = -1
+const Z_STREAM_ERROR = -2
+const Z_DATA_ERROR = -3
+const Z_MEM_ERROR = -4
+const Z_BUF_ERROR = -5
+const Z_VERSION_ERROR = -6
 
 // Compression levels
-let Z_NO_COMPRESSION = 0
-let Z_BEST_SPEED = 1
-let Z_BEST_COMPRESSION = 9
-let Z_DEFAULT_COMPRESSION = -1
+const Z_NO_COMPRESSION = 0
+const Z_BEST_SPEED = 1
+const Z_BEST_COMPRESSION = 9
+const Z_DEFAULT_COMPRESSION = -1
 
 // Compression strategies
-let Z_FILTERED = 1
-let Z_HUFFMAN_ONLY = 2
-let Z_RLE = 3
-let Z_FIXED = 4
-let Z_DEFAULT_STRATEGY = 0
+const Z_FILTERED = 1
+const Z_HUFFMAN_ONLY = 2
+const Z_RLE = 3
+const Z_FIXED = 4
+const Z_DEFAULT_STRATEGY = 0
 
 // Data types
-let Z_BINARY = 0
-let Z_TEXT = 1
-let Z_ASCII = 1
-let Z_UNKNOWN = 2
+const Z_BINARY = 0
+const Z_TEXT = 1
+const Z_ASCII = 1
+const Z_UNKNOWN = 2
 
 // Compression method
-let Z_DEFLATED = 8
+const Z_DEFLATED = 8
 
 // Null pointer
-let Z_NULL = 0
+const Z_NULL = 0
 
 // Version
-let ZLIB_VERSION = "1.3.2"
-let ZLIB_VERNUM = 0x1320
-let ZLIB_VER_MAJOR = 1
-let ZLIB_VER_MINOR = 3
-let ZLIB_VER_REVISION = 2
-let ZLIB_VER_SUBREVISION = 0
+const ZLIB_VERSION = "1.3.2"
+const ZLIB_VERNUM = 0x1320
+const ZLIB_VER_MAJOR = 1
+const ZLIB_VER_MINOR = 3
+const ZLIB_VER_REVISION = 2
+const ZLIB_VER_SUBREVISION = 0
 
 // Basic functions
 def zlibVersion() -> *u8

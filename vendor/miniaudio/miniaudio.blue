@@ -67,40 +67,40 @@ struct ma_log
 
 // Constants & Enums
 
-let MA_LOG_LEVEL_DEBUG = 0
-let MA_LOG_LEVEL_INFO = 1
-let MA_LOG_LEVEL_WARNING = 2
-let MA_LOG_LEVEL_ERROR = 3
+const MA_LOG_LEVEL_DEBUG = 0
+const MA_LOG_LEVEL_INFO = 1
+const MA_LOG_LEVEL_WARNING = 2
+const MA_LOG_LEVEL_ERROR = 3
 
-let ma_device_type_playback = 1
-let ma_device_type_capture = 2
-let ma_device_type_duplex = 3
-let ma_device_type_loopback = 4
+const ma_device_type_playback = 1
+const ma_device_type_capture = 2
+const ma_device_type_duplex = 3
+const ma_device_type_loopback = 4
 
-let MA_SUCCESS = 0
+const MA_SUCCESS = 0
 
-let MA_FORMAT_UNKNOWN = 0
-let MA_FORMAT_U8 = 1
-let MA_FORMAT_S16 = 2
-let MA_FORMAT_S24 = 3
-let MA_FORMAT_S32 = 4
-let MA_FORMAT_F32 = 5
+const MA_FORMAT_UNKNOWN = 0
+const MA_FORMAT_U8 = 1
+const MA_FORMAT_S16 = 2
+const MA_FORMAT_S24 = 3
+const MA_FORMAT_S32 = 4
+const MA_FORMAT_F32 = 5
 
-let MA_WAVEFORM_TYPE_SINE = 0
-let MA_WAVEFORM_TYPE_SQUARE = 1
-let MA_WAVEFORM_TYPE_TRIANGLE = 2
-let MA_WAVEFORM_TYPE_SAWTOOTH = 3
+const MA_WAVEFORM_TYPE_SINE = 0
+const MA_WAVEFORM_TYPE_SQUARE = 1
+const MA_WAVEFORM_TYPE_TRIANGLE = 2
+const MA_WAVEFORM_TYPE_SAWTOOTH = 3
 
-let MA_SOUND_FLAG_STREAM: u32                = 0x00000001
-let MA_SOUND_FLAG_DECODE: u32                = 0x00000002
-let MA_SOUND_FLAG_ASYNC: u32                 = 0x00000004
-let MA_SOUND_FLAG_WAIT_INIT: u32             = 0x00000008
-let MA_SOUND_FLAG_UNKNOWN_LENGTH: u32        = 0x00000010
-let MA_SOUND_FLAG_LOOPING: u32               = 0x00000020
+const MA_SOUND_FLAG_STREAM: u32                = 0x00000001
+const MA_SOUND_FLAG_DECODE: u32                = 0x00000002
+const MA_SOUND_FLAG_ASYNC: u32                 = 0x00000004
+const MA_SOUND_FLAG_WAIT_INIT: u32             = 0x00000008
+const MA_SOUND_FLAG_UNKNOWN_LENGTH: u32        = 0x00000010
+const MA_SOUND_FLAG_LOOPING: u32               = 0x00000020
 
-let MA_SOUND_FLAG_NO_DEFAULT_ATTACHMENT: u32 = 0x00001000
-let MA_SOUND_FLAG_NO_PITCH: u32              = 0x00002000
-let MA_SOUND_FLAG_NO_SPATIALIZATION: u32     = 0x00004000
+const MA_SOUND_FLAG_NO_DEFAULT_ATTACHMENT: u32 = 0x00001000
+const MA_SOUND_FLAG_NO_PITCH: u32              = 0x00002000
+const MA_SOUND_FLAG_NO_SPATIALIZATION: u32     = 0x00004000
 
 // Version API
 

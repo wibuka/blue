@@ -1,12 +1,12 @@
 import "core/libc"
 
-let JSON_integer_type = 1
-let JSON_float_type   = 2
-let JSON_string_type  = 3
-let JSON_boolean_type = 4
-let JSON_null_type    = 5
-let JSON_object_type  = 6
-let JSON_array_type   = 7
+const JSON_integer_type = 1
+const JSON_float_type   = 2
+const JSON_string_type  = 3
+const JSON_boolean_type = 4
+const JSON_null_type    = 5
+const JSON_object_type  = 6
+const JSON_array_type   = 7
 
 struct JSON_JsonValue {
     type: i32
@@ -41,7 +41,7 @@ struct JSON_Parser {
 
 @private
 def token_is(tk: Token, str: *u8) -> bool {
-    let len = strlen(str)
+    var len = strlen(str)
     if tk.size != len {
         return false
     }
@@ -88,7 +88,7 @@ def JSON_read_hex4(parser: *JSON_Parser) -> i32 {
             break
         }
 
-        let digit = JSON_hex_value(parser.text[parser.index])
+        var digit = JSON_hex_value(parser.text[parser.index])
         if digit < 0 {
             return -1
         }
@@ -136,7 +136,7 @@ def JSON_parse_value(parser: *JSON_Parser) -> JSON_JsonValue {
         return JSON_JsonValue{0, nil}
     }
 
-    let c = parser.text[parser.index]
+    var c = parser.text[parser.index]
 
     if c == '{' {
         return JSON_parse_object(parser)
@@ -199,12 +199,12 @@ def JSON_parse_object(parser: *JSON_Parser) -> JSON_JsonValue {
             return JSON_JsonValue{0, nil}
         }
 
-        let key_value = JSON_parse_string(parser)
+        var key_value = JSON_parse_string(parser)
         if key_value.type != JSON_string_type {
             return JSON_JsonValue{0, nil}
         }
 
-        let key = key_value.data as *u8
+        var key = key_value.data as *u8
 
         // Consume ':'.
         JSON_skip_whitespace(parser)
@@ -214,13 +214,13 @@ def JSON_parse_object(parser: *JSON_Parser) -> JSON_JsonValue {
         parser.index = parser.index + 1
 
         // Parse the value.
-        let value = JSON_parse_value(parser)
+        var value = JSON_parse_value(parser)
         if value.type == 0 {
             return JSON_JsonValue{0, nil}
         }
 
         // Append the key and value.
-        let next_count = object.count + 1
+        var next_count = object.count + 1
 
         var keys = realloc(object.keys as *u0, next_count * sizeof(usize)) as **u8
         if keys == nil {
@@ -250,7 +250,7 @@ def JSON_parse_object(parser: *JSON_Parser) -> JSON_JsonValue {
             return JSON_JsonValue{0, nil}
         }
 
-        let c = parser.text[parser.index]
+        var c = parser.text[parser.index]
         if c == ',' {
             parser.index = parser.index + 1
             continue
@@ -294,13 +294,13 @@ def JSON_parse_array(parser: *JSON_Parser) -> JSON_JsonValue {
 
     loop {
         // Parse the element.
-        let value = JSON_parse_value(parser)
+        var value = JSON_parse_value(parser)
         if value.type == 0 {
             return JSON_JsonValue{0, nil}
         }
 
         // Append the element.
-        let next_count = array.count + 1
+        var next_count = array.count + 1
 
         var values = realloc(array.values as *u0, next_count * sizeof(usize)) as **JSON_JsonValue
         if values == nil {
@@ -323,7 +323,7 @@ def JSON_parse_array(parser: *JSON_Parser) -> JSON_JsonValue {
             return JSON_JsonValue{0, nil}
         }
 
-        let c = parser.text[parser.index]
+        var c = parser.text[parser.index]
         if c == ',' {
             parser.index = parser.index + 1
             continue
@@ -348,7 +348,7 @@ def JSON_parse_string(parser: *JSON_Parser) -> JSON_JsonValue {
 
     // Consume the opening quote.
     parser.index = parser.index + 1
-    let start = parser.index
+    var start = parser.index
 
     // The raw source is always at least as long as the decoded string.
     var buffer = malloc(parser.length - start + 1) as *u8
@@ -364,7 +364,7 @@ def JSON_parse_string(parser: *JSON_Parser) -> JSON_JsonValue {
             return JSON_JsonValue{0, nil}
         }
 
-        let c = parser.text[parser.index]
+        var c = parser.text[parser.index]
 
         if c == '"' {
             parser.index = parser.index + 1
@@ -379,7 +379,7 @@ def JSON_parse_string(parser: *JSON_Parser) -> JSON_JsonValue {
                 return JSON_JsonValue{0, nil}
             }
 
-            let escape = parser.text[parser.index]
+            var escape = parser.text[parser.index]
             parser.index = parser.index + 1
 
             if escape == '"' {
@@ -415,7 +415,7 @@ def JSON_parse_string(parser: *JSON_Parser) -> JSON_JsonValue {
                 offset = offset + 1
             }
             else if escape == 'u' {
-                let high = JSON_read_hex4(parser)
+                var high = JSON_read_hex4(parser)
                 if high < 0 {
                     free(buffer as *u0)
                     return JSON_JsonValue{0, nil}
@@ -435,7 +435,7 @@ def JSON_parse_string(parser: *JSON_Parser) -> JSON_JsonValue {
                     }
 
                     parser.index = parser.index + 2
-                    let low = JSON_read_hex4(parser)
+                    var low = JSON_read_hex4(parser)
                     if low < 0xDC00 or low > 0xDFFF {
                         free(buffer as *u0)
                         return JSON_JsonValue{0, nil}
@@ -475,7 +475,7 @@ def JSON_parse_string(parser: *JSON_Parser) -> JSON_JsonValue {
 
 @private
 def JSON_parse_number(parser: *JSON_Parser) -> JSON_JsonValue {
-    let start = parser.index
+    var start = parser.index
     var is_float = false
 
     if parser.text[parser.index] == '-' {
@@ -487,7 +487,7 @@ def JSON_parse_number(parser: *JSON_Parser) -> JSON_JsonValue {
     }
 
     // Integer part.
-    let first = parser.text[parser.index]
+    var first = parser.text[parser.index]
     if first == '0' {
         parser.index = parser.index + 1
     }
@@ -496,7 +496,7 @@ def JSON_parse_number(parser: *JSON_Parser) -> JSON_JsonValue {
             if parser.index >= parser.length {
                 break
             }
-            let c = parser.text[parser.index]
+            var c = parser.text[parser.index]
             if c < '0' or c > '9' {
                 break
             }
@@ -516,7 +516,7 @@ def JSON_parse_number(parser: *JSON_Parser) -> JSON_JsonValue {
             return JSON_JsonValue{0, nil}
         }
 
-        let c = parser.text[parser.index]
+        var c = parser.text[parser.index]
         if c < '0' or c > '9' {
             return JSON_JsonValue{0, nil}
         }
@@ -525,7 +525,7 @@ def JSON_parse_number(parser: *JSON_Parser) -> JSON_JsonValue {
             if parser.index >= parser.length {
                 break
             }
-            let digit = parser.text[parser.index]
+            var digit = parser.text[parser.index]
             if digit < '0' or digit > '9' {
                 break
             }
@@ -535,13 +535,13 @@ def JSON_parse_number(parser: *JSON_Parser) -> JSON_JsonValue {
 
     // Exponent part.
     if parser.index < parser.length {
-        let c = parser.text[parser.index]
+        var c = parser.text[parser.index]
         if c == 'e' or c == 'E' {
             is_float = true
             parser.index = parser.index + 1
 
             if parser.index < parser.length {
-                let sign = parser.text[parser.index]
+                var sign = parser.text[parser.index]
                 if sign == '+' or sign == '-' {
                     parser.index = parser.index + 1
                 }
@@ -551,7 +551,7 @@ def JSON_parse_number(parser: *JSON_Parser) -> JSON_JsonValue {
                 return JSON_JsonValue{0, nil}
             }
 
-            let digit = parser.text[parser.index]
+            var digit = parser.text[parser.index]
             if digit < '0' or digit > '9' {
                 return JSON_JsonValue{0, nil}
             }
@@ -560,7 +560,7 @@ def JSON_parse_number(parser: *JSON_Parser) -> JSON_JsonValue {
                 if parser.index >= parser.length {
                     break
                 }
-                let next = parser.text[parser.index]
+                var next = parser.text[parser.index]
                 if next < '0' or next > '9' {
                     break
                 }
@@ -569,7 +569,7 @@ def JSON_parse_number(parser: *JSON_Parser) -> JSON_JsonValue {
         }
     }
 
-    let end = parser.index
+    var end = parser.index
 
     // Copy the number into a temporary NUL-terminated buffer for libc.
     var buffer = malloc(end - start + 1) as *u8
@@ -666,7 +666,7 @@ def JSON_parse(text: *u8) -> JSON_JsonValue {
         strlen(text)
     }
 
-    let value = JSON_parse_value(&parser)
+    var value = JSON_parse_value(&parser)
 
     JSON_skip_whitespace(&parser)
 
@@ -718,7 +718,7 @@ def JSON_object_count(value: JSON_JsonValue) -> usize {
     if value.type != JSON_object_type {
         return 0
     }
-    let object = value.data as *JSON_Object
+    var object = value.data as *JSON_Object
     return object.count
 }
 
@@ -726,7 +726,7 @@ def JSON_array_count(value: JSON_JsonValue) -> usize {
     if value.type != JSON_array_type {
         return 0
     }
-    let array = value.data as *JSON_Array
+    var array = value.data as *JSON_Array
     return array.count
 }
 
@@ -735,7 +735,7 @@ def JSON_get_object(value: JSON_JsonValue, key: *u8) -> JSON_JsonValue {
         return JSON_NULL()
     }
 
-    let object = value.data as *JSON_Object
+    var object = value.data as *JSON_Object
     var i: usize = 0
 
     loop {
@@ -758,7 +758,7 @@ def JSON_get_object_item(value: JSON_JsonValue, key: *u8) -> JSON_JsonValue {
 }
 
 def JSON_get_array(value: JSON_JsonValue, key: *u8) -> JSON_JsonValue {
-    let item = JSON_get_object(value, key)
+    var item = JSON_get_object(value, key)
     if item.type != JSON_array_type {
         return JSON_NULL()
     }
@@ -770,7 +770,7 @@ def JSON_get_array_item(value: JSON_JsonValue, index: usize) -> JSON_JsonValue {
         return JSON_NULL()
     }
 
-    let array = value.data as *JSON_Array
+    var array = value.data as *JSON_Array
     if index >= array.count {
         return JSON_NULL()
     }
